@@ -28,7 +28,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nCmdShow
 	if (!InitApplication(hInstance))
 	{
 		// TODO: Properly log an error message for windows?
-		MessageBox(NULL, L"Failed to init application!", NULL, NULL);
+		MessageBox(NULL, _T("Failed to init application!"), NULL, NULL);
 		return 1;
 	}
 
@@ -70,7 +70,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc;
 	TCHAR greeting[] = _T("Hello, World");
-	//MessageBox(NULL, _T("hotkey1 was pressed"), NULL, NULL);
 
 	switch (message)
 	{
@@ -93,13 +92,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case HOTKEY1:
-			MessageBox(NULL, L"Hotkey1 was pressed.", NULL, NULL);
+			OutputDebugString(_T("Hotkey1 was pressed.\n"));
 			break;
 		case HOTKEY2:
-			MessageBox(NULL, L"Hotkey2 was pressed.", NULL, NULL);
+			OutputDebugString(_T("Hotkey2 was pressed.\n"));
 			break;
 		default:
-			MessageBox(NULL, L"Unknown hotkey was pressed.", NULL, NULL);
+			OutputDebugString(_T("Unknown hotkey was pressed.\n"));
 			break;
 		}
 		break;
@@ -111,7 +110,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetForegroundWindow(hWnd);
 			break;
 		case WM_RBUTTONDOWN:
-			MessageBox(NULL, L"You right clicked", NULL, NULL);
+			OutputDebugString(_T("You right clicked the tray icon.\n"));
 			break;
 			//case WM_CONTEXTMENU: ShowContextMenu(hWnd);
 		}
@@ -119,7 +118,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	//	switch (LOWORD(wParam))
 	//	{
 	//	case MY_MENU_MSG1:
-	//		MessageBox(NULL, L"MENU MESSAGE 1", NULL, NULL);
+	//		OutputDebugString(_T("MENU MESSAGE 1\n"));
 	//		break;-
 	//	}
 	//	break;
@@ -189,8 +188,8 @@ BOOL InitTrayIcon(const HWND& hWnd, NOTIFYICONDATA& nid)
 	nid.uTimeout = 10000;
 	nid.hWnd = hWnd;
 	nid.uCallbackMessage = MY_TRAY_ICON_MESSAGE;
-	wcsncpy_s(nid.szInfoTitle, 64, L"Title for balloon", 64);
-	wcsncpy_s(nid.szInfo, 256, L"Body for balloon", 256);
+	wcsncpy_s(nid.szInfoTitle, 64, _T("Title for balloon"), 64);
+	wcsncpy_s(nid.szInfo, 256, _T("Body for balloon"), 256);
 	// Do NOT set the NIF_INFO flag. idk why
 
 	// Add the icon

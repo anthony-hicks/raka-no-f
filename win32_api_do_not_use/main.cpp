@@ -70,14 +70,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc;
 	TCHAR greeting[] = _T("Hello, World");
+	COLORREF white = RGB(255, 255, 255);
+	COLORREF green = RGB(125, 255, 255);
 
 	switch (message)
 	{
-	/*case WM_PAINT:
+	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
+		SetBkMode(hdc, TRANSPARENT);
+		SetTextColor(hdc, green);
 		TextOut(hdc, 5, 5, greeting, _tcslen(greeting));
+		TextOut(hdc, 5, 35, greeting, _tcslen(greeting));
 		EndPaint(hWnd, &ps);
-		break;*/
+		break;
 	case WM_SIZE:
 		if (wParam == SIZE_MINIMIZED)
 		{
@@ -153,14 +158,25 @@ BOOL InitWindowHandle(HINSTANCE hInstance, HWND& hWnd, int nCmdShow)
 {
 	g_hInst = hInstance; // Store instance handle in global var. Idk why, but all the tutorials have this.
 
-	hWnd = CreateWindow(
+	INT startX = CW_USEDEFAULT;
+	INT startY = CW_USEDEFAULT;
+	INT width = 500;
+	INT height = 100;
+
+	//DWORD windowStyle = WS_EX_LAYERED | WS_EX_NOACTIVATE | WS_EX_TOPMOST | WS_EX_TRANSPARENT;
+	DWORD windowStyle = WS_EX_LAYERED | WS_EX_NOACTIVATE | WS_EX_TOPMOST;
+	//DWORD windowOptions = WS_POPUP;
+	DWORD windowOptions = NULL;
+
+	hWnd = CreateWindowEx(
+		windowStyle,
 		szWindowClass,		 // name of window class
 		szTitle,			 // title-bar string
-		WS_OVERLAPPEDWINDOW, // top-level window
-		CW_USEDEFAULT,		 // horizontal position
-		CW_USEDEFAULT,		 // vertical position
-		500,				 // width
-		100,				 // height
+		windowOptions,
+		startX,
+		startY,
+		width,
+		height,
 		(HWND) NULL,		 // owner window
 		(HMENU) NULL,		 // menu handle/child-window identifier
 		hInstance,           // handle to application instance
@@ -172,10 +188,23 @@ BOOL InitWindowHandle(HINSTANCE hInstance, HWND& hWnd, int nCmdShow)
 		return FALSE;
 	}
 
+	/*HRGN GGG = CreateRectRgn(startX, startY, width, height);
+	InvertRgn(GetDC(hWnd), GGG);
+	SetWindowRgn(hWnd, GGG, false);
+
+	COLORREF RRR = RGB(255, 0, 255);
+	SetLayeredWindowAttributes(hWnd, RRR, (BYTE)0, LWA_COLORKEY);*/
+	// 1. Create a solid background color
+	// 2. Set that color as the window's transparent color
+	//    Anything on the window that is not using that color will not be transparent. The OS will handle the rest for you.
+	// Should use color keying (LWA_COLORKEY)
+	SetLayeredWindowAttributes(hWnd, 0, 100, LWA_ALPHA);
+
 	ShowWindow(hWnd, nCmdShow);
 	//ShowWindow(hWnd, SW_HIDE);
 	UpdateWindow(hWnd);
 
+	//DeleteObject(GGG);
 	return TRUE;
 }
 

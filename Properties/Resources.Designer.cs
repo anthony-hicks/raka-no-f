@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace raka_no_f_winforms.Properties
+namespace raka_no_f.Properties
 {
 
 

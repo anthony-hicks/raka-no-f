@@ -46,6 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Countdown.cs" />
+    <Compile Include="Enemy.cs" />
     <Compile Include="HotKeyManager.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

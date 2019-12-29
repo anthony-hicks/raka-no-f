@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace raka_no_f_winforms
+namespace raka_no_f
 {
     static class Program
     {

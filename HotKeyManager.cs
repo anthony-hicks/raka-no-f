@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 
-namespace raka_no_f_winforms
+namespace raka_no_f
 {
     [Flags]
     public enum KeyModifiers

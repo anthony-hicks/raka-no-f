@@ -101,6 +101,22 @@ namespace raka_no_f
                  * we could also just do this.label.Dispose() in Countdown, when it is ready. Depends on what should know.
                  */
             }
+
+            //TODO: put this on its own timer?
+            for (int i = countdowns.Count - 1; i >= 0; i--)
+            {
+                if (countdowns[i].done)
+                {
+                    // Remove the label from the flow layout panel
+                    this.flowLayoutPanel1.Controls.Remove(countdowns[i].label);
+
+                    // Release resources of label
+                    countdowns[i].label.Dispose();
+
+                    // Remove the countdown
+                    countdowns.RemoveAt(i);
+                }
+            }
             base.WndProc(ref m);
         }
 
@@ -113,7 +129,7 @@ namespace raka_no_f
             hotkeys[nameof(Position)][(int)Position.sup] = hotkeyManager.RegisterGlobal(Keys.Decimal, KeyModifiers.None, "Decimal");
 
             hotkeys[nameof(Spell)][(int)Spell.flash] = hotkeyManager.RegisterGlobal(Keys.Add, KeyModifiers.None, "Add");
-            hotkeys[nameof(Spell)][(int)Spell.ignite] = hotkeyManager.RegisterGlobal(Keys.F, KeyModifiers.Ctrl | KeyModifiers.Alt, "Ctrl+Alt+F");
+            hotkeys[nameof(Spell)][(int)Spell.ignite] = hotkeyManager.RegisterGlobal(Keys.NumPad9, KeyModifiers.None, "NumPad9");
             hotkeys[nameof(Spell)][(int)Spell.teleport] = hotkeyManager.RegisterGlobal(Keys.Enter, KeyModifiers.None, "Enter");
         }
         private void Form1_Resize(object sender, EventArgs e)

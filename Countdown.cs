@@ -8,14 +8,17 @@ namespace raka_no_f
 {
     class Countdown
     {
-        private System.Windows.Forms.Label m_label;
+        public System.Windows.Forms.Label label { get; private set; }
         public Position position { get; }
         public Spell spell { get; }
+        public bool done { get; private set; }
 
+        private uint m_alert_remaining;
         private uint m_initial;
         private uint m_remaining;
         private string m_message;
         private System.Windows.Forms.Timer m_timer;
+        private System.Windows.Forms.Timer m_alert_timer;
 
         public Countdown(Position pos_, 
                          Spell spell_, 
@@ -23,12 +26,18 @@ namespace raka_no_f
                          uint remaining_,
                          string message_)
         {
-            m_label = label_;
+            label = label_;
             m_message = message_;
             m_initial = remaining_;
             m_remaining = remaining_;
+            m_alert_remaining = 10;
+
             position = pos_;
             spell = spell_;
+
+            m_alert_timer = new System.Windows.Forms.Timer();
+            m_alert_timer.Interval = 1000;
+            m_alert_timer.Tick += new System.EventHandler(this.onAlertTick);
 
             m_timer = new System.Windows.Forms.Timer();
             m_timer.Interval = 1000;
@@ -48,10 +57,28 @@ namespace raka_no_f
             if (m_remaining == 0)
             {
                 m_timer.Stop();
-                // TODO: some sort of visual alarm that the ability is now off cd? or getting close?
+                m_alert_timer.Start();
             }
-            m_label.Text = m_message + m_remaining;
-            m_remaining--;
+            else
+            {
+                label.Text = m_message + m_remaining;
+                m_remaining--;
+            }
+        }
+
+        private void onAlertTick(object sender, System.EventArgs e)
+        {
+            if (m_alert_remaining == 0)
+            {
+                done = true;
+                m_alert_timer.Stop();
+            }
+            else
+            {
+                //TODO: visual alarm? Flash text possible?
+                label.Text = m_message + "UP";
+                m_alert_remaining--;
+            }
         }
     }
 }

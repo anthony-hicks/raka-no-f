@@ -12,6 +12,7 @@ namespace raka_no_f
         public Position position { get; }
         public Spell spell { get; }
 
+        private uint m_initial;
         private uint m_remaining;
         private string m_message;
         private System.Windows.Forms.Timer m_timer;
@@ -24,6 +25,7 @@ namespace raka_no_f
         {
             m_label = label_;
             m_message = message_;
+            m_initial = remaining_;
             m_remaining = remaining_;
             position = pos_;
             spell = spell_;
@@ -36,13 +38,10 @@ namespace raka_no_f
 
         public void reset()
         {
-            // Thread safe?
-            m_remaining = 300;
+            m_timer.Stop();
+            m_remaining = m_initial;
+            m_timer.Start();
         }
-        // TODO: going to have to keep track of our countdowns
-        //       if we want to update one on the fly, we need a handle to it.
-        //       main should keep a list of countdowns.
-        // TODO: get/set for message?
 
         private void onTick(object sender, System.EventArgs e)
         {

@@ -22,15 +22,12 @@ namespace raka_no_f
         private System.Windows.Forms.ContextMenu contextMenu;
         private System.Windows.Forms.MenuItem menuItemExit;
 
-        private Dictionary<string, int[]> hotkeys;
-        private int m_ad_key_id;
-        private int m_top_key_id;
-        private int m_flash_key_id;
-
         private bool[] selected;
-
         private Enemy[] enemies;
         private List<Countdown> countdowns;
+
+        private HotKeyManager hotkeyManager;
+        private Dictionary<string, int[]> hotkeys;
 
         public Form1()
         {
@@ -48,7 +45,7 @@ namespace raka_no_f
                 enemies[(int)pos] = new Enemy(pos, false);
             }
 
-            HotKeyManager hotkeyManager = new HotKeyManager(this.Handle);
+            hotkeyManager = new HotKeyManager(this.Handle);
 
             hotkeys = new Dictionary<string, int[]>
             {
@@ -56,10 +53,7 @@ namespace raka_no_f
                 [nameof(Spell)] = new int[(int)Spell.noe]
             };
 
-            // TODO: default hotkeys
-            hotkeys[nameof(Position)][(int)Position.adc] = hotkeyManager.RegisterGlobal(Keys.Q, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+Q");
-            hotkeys[nameof(Position)][(int)Position.top] = hotkeyManager.RegisterGlobal(Keys.S, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+S");
-            hotkeys[nameof(Spell)][(int)Spell.flash] = hotkeyManager.RegisterGlobal(Keys.F, KeyModifiers.Ctrl | KeyModifiers.Alt, "Ctrl+Alt+F");
+            assignDefaultHotkeys();
 
             // TODO: get sums from RiotAPI to get more accurate CDs?
         }
@@ -101,15 +95,27 @@ namespace raka_no_f
                     //TODO: Unknown hotkey pressed
                 }
 
-                    /* foreach (c in countdowns):
-                     *      if c.done:
-                     *          this.Controls.Remove(c.label)
-                     * we could also just do this.label.Dispose() in Countdown, when it is ready. Depends on what should know.
-                     */
+                /* foreach (c in countdowns):
+                 *      if c.done:
+                 *          this.Controls.Remove(c.label)
+                 * we could also just do this.label.Dispose() in Countdown, when it is ready. Depends on what should know.
+                 */
             }
             base.WndProc(ref m);
         }
 
+        private void assignDefaultHotkeys()
+        {
+            hotkeys[nameof(Position)][(int)Position.top] = hotkeyManager.RegisterGlobal(Keys.NumPad7, KeyModifiers.None, "NumPad7");
+            hotkeys[nameof(Position)][(int)Position.jg] = hotkeyManager.RegisterGlobal(Keys.NumPad4, KeyModifiers.None, "NumPad4");
+            hotkeys[nameof(Position)][(int)Position.mid] = hotkeyManager.RegisterGlobal(Keys.NumPad1, KeyModifiers.None, "NumPad1");
+            hotkeys[nameof(Position)][(int)Position.adc] = hotkeyManager.RegisterGlobal(Keys.NumPad0, KeyModifiers.None, "NumPad0");
+            hotkeys[nameof(Position)][(int)Position.sup] = hotkeyManager.RegisterGlobal(Keys.Decimal, KeyModifiers.None, "Decimal");
+
+            hotkeys[nameof(Spell)][(int)Spell.flash] = hotkeyManager.RegisterGlobal(Keys.Add, KeyModifiers.None, "Add");
+            hotkeys[nameof(Spell)][(int)Spell.ignite] = hotkeyManager.RegisterGlobal(Keys.F, KeyModifiers.Ctrl | KeyModifiers.Alt, "Ctrl+Alt+F");
+            hotkeys[nameof(Spell)][(int)Spell.teleport] = hotkeyManager.RegisterGlobal(Keys.Enter, KeyModifiers.None, "Enter");
+        }
         private void Form1_Resize(object sender, EventArgs e)
         {
             if (this.WindowState == FormWindowState.Minimized)

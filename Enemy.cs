@@ -12,19 +12,33 @@ namespace raka_no_f
         jg = 1,
         mid = 2,
         adc = 3,
-        sup = 4
+        sup = 4,
+        noe
+    }
+
+    // TODO: place enums in appropriate file
+    enum Spell
+    {
+        flash,
+        ignite,
+        exhaust,
+        teleport
     }
 
     class Enemy
     {
         private Position position;
         private bool has_insight; // TODO: real rune names that change summ spell cd
-        private int[] summonerCD;
+        public Dictionary<string, uint> cd { get; } // Could also use indexing using enu, sparse array
 
         public Enemy(Position pos_, bool has_insight_)
         {
             position = pos_;
             has_insight = has_insight_;
+
+            cd = new Dictionary<string, uint>();
+            cd["flash"] = 300; //TODO: defaults?
+            cd["ignite"] = 180;
         }
     }
 }

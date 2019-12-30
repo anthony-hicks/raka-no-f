@@ -8,14 +8,16 @@ namespace raka_no_f
 {
     class Countdown
     {
+        private System.Windows.Forms.Label m_label;
         private uint m_remaining;
         private string m_message;
         private System.Windows.Forms.Timer m_timer;
 
-        public Countdown(uint remaining)
+        public Countdown(Position pos_, Spell spell_, System.Windows.Forms.Label label_, uint remaining_)
         {
+            m_label = label_;
             m_message = "";
-            m_remaining = remaining;
+            m_remaining = remaining_;
 
             m_timer = new System.Windows.Forms.Timer();
             m_timer.Interval = 1000;
@@ -29,13 +31,6 @@ namespace raka_no_f
         // TODO: get/set for message?
         // TODO: get/set for remaining
 
-            /*  on_EnterPressOfTimerTextBox:
-             *      change the remaining time for that box's respective timer/countdown
-             *      can do dynamic boxes, but to tie them to a timer, might need a new class
-             *      or ?
-             * 
-             */
-
         private void onTick(object sender, System.EventArgs e)
         {
             if (m_remaining == 0)
@@ -43,8 +38,9 @@ namespace raka_no_f
                 m_timer.Stop();
                 // TODO: some sort of visual alarm that the ability is now off cd?
             }
-            label1.Text = "AD Flash: " + remaining;
-            remaining--;
+            //TODO: m_message
+            m_label.Text = "AD Flash: " + m_remaining;
+            m_remaining--;
         }
     }
 }

@@ -25,11 +25,7 @@ namespace raka_no_f
         private int m_top_key_id;
         private int m_flash_key_id;
 
-        private bool m_top_selected;
-        private bool m_jg_selected;
-        private bool m_mid_selected;
-        private bool m_ad_selected;
-        private bool m_sup_selected;
+        private bool[] selected;
 
         private Enemy[] enemies;
         private List<Countdown> countdowns;
@@ -43,10 +39,12 @@ namespace raka_no_f
 
             HotKeyManager hotkeys = new HotKeyManager(this.Handle);
 
+            // TODO: dictionary of hotkeys based on enum? string value of enum for unique key?
             m_ad_key_id = hotkeys.RegisterGlobal(Keys.Q, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+Q");
             m_top_key_id = hotkeys.RegisterGlobal(Keys.S, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+S");
             m_flash_key_id = hotkeys.RegisterGlobal(Keys.F, KeyModifiers.Ctrl | KeyModifiers.Alt, "Ctrl+Alt+F");
 
+            selected = new bool[(int)Position.noe];
             enemies = new Enemy[(int)Position.noe];
             countdowns = new List<Countdown>();
 
@@ -62,40 +60,31 @@ namespace raka_no_f
             if (m.Msg == HotKeyManager.WM_HOTKEY)
             {
                 /* TODO: 
-                 * selected: {
-                 *      Position.top: false,
-                 *      Position.adc: true
-                 * }
-                 *      spell = spell_ids.find((int)m.Wparam))
-                 *      if(found):
-                 *          position = selected.find(=> x == true)
-                 *          if (position):
-                 *              position = false;
-                 *              processCountdown(whichever_was_true, whichever_spell_was_pressed, "{} {}: ".format(which.ToString(), spell.ToString()))
-                 * 
-                 * 
-                 * 
-                 * 
-                 * 
+                1. Check if wParam is equal to any hotkey id for a summoner spell
+                2. if so:
+                    3. Check if any positions have been selected
+                    4. if so:
+                        5. deselect that position
+                        6. processCountdown(that_pos, that_spell)
                  */
                 if (m_flash_key_id == (int)m.WParam)
                 {
                     Console.WriteLine("flash selected");
-                    if (m_ad_selected)
+                    if (selected[(int)Position.adc])
                     {
-                        m_ad_selected = false;
+                        selected[(int)Position.adc] = false;
                         this.processCountdown(Position.adc, Spell.flash);
                     }
-                    else if (m_top_selected)
+                    else if (selected[(int)Position.top])
                     {
-                        m_top_selected = false;
+                        selected[(int)Position.top] = false;
                         this.processCountdown(Position.top, Spell.flash);
                     }
                 }
                 else if (m_ad_key_id == (int)m.WParam)
                 {
-                    m_ad_selected = true;
-                    m_top_selected = false;
+                    Array.Clear(selected, 0, selected.Length);
+                    selected[(int)Position.adc] = true;
                     // TODO: timeout for bools?
                     /* foreach (c in countdowns):
                      *      if c.done:
@@ -106,9 +95,8 @@ namespace raka_no_f
                 }
                 else if (m_top_key_id == (int)m.WParam)
                 {
-                    m_top_selected = true;
-                    m_ad_selected = false; //TODO: we don't want to allow "AD -> TOP -> FLASH" to register a flash for AD
-                                           // If any position hotkey has been pressed, set all bools to false
+                    Array.Clear(selected, 0, selected.Length);
+                    selected[(int)Position.top] = true;
                     Console.WriteLine("top selected");
                 }
                 else

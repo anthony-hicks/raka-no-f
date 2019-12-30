@@ -9,6 +9,12 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 
+//TODO: standardize m_ members and param_
+//TODO: add customization of hotkeys via trayIcon context menu
+//TODO: no window icon when not in tray
+//TODO: have overlay + tray when league is running (in game)
+//      only have tray when league isn't running
+
 namespace raka_no_f
 {
     public partial class Form1 : Form
@@ -45,14 +51,13 @@ namespace raka_no_f
                 enemies[(int)pos] = new Enemy(pos, false);
             }
 
-            hotkeyManager = new HotKeyManager(this.Handle);
-
             hotkeys = new Dictionary<string, int[]>
             {
                 [nameof(Position)] = new int[(int)Position.noe],
                 [nameof(Spell)] = new int[(int)Spell.noe]
             };
 
+            hotkeyManager = new HotKeyManager(this.Handle);
             assignDefaultHotkeys();
 
             // TODO: get sums from RiotAPI to get more accurate CDs?
@@ -92,14 +97,7 @@ namespace raka_no_f
                 else
                 {
                     Console.WriteLine("Hotkey ID not recognized.");
-                    //TODO: Unknown hotkey pressed
                 }
-
-                /* foreach (c in countdowns):
-                 *      if c.done:
-                 *          this.Controls.Remove(c.label)
-                 * we could also just do this.label.Dispose() in Countdown, when it is ready. Depends on what should know.
-                 */
             }
 
             //TODO: put this on its own timer?
@@ -132,6 +130,7 @@ namespace raka_no_f
             hotkeys[nameof(Spell)][(int)Spell.ignite] = hotkeyManager.RegisterGlobal(Keys.NumPad9, KeyModifiers.None, "NumPad9");
             hotkeys[nameof(Spell)][(int)Spell.teleport] = hotkeyManager.RegisterGlobal(Keys.Enter, KeyModifiers.None, "Enter");
         }
+
         private void Form1_Resize(object sender, EventArgs e)
         {
             if (this.WindowState == FormWindowState.Minimized)

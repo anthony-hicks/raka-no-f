@@ -36,7 +36,7 @@ namespace raka_no_f
 
             cd = new Dictionary<Spell, uint>();
             cd[Spell.flash] = 300; //TODO: defaults?
-            cd[Spell.ignite] = 5;
+            cd[Spell.ignite] = 180;
             cd[Spell.exhaust] = 180;
             cd[Spell.teleport] = 360;
         }

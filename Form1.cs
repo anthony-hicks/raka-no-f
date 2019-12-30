@@ -32,6 +32,7 @@ namespace raka_no_f
         private bool m_sup_selected;
 
         private Enemy[] enemies;
+        private List<Countdown> countdowns;
 
         public Form1()
         {
@@ -47,6 +48,7 @@ namespace raka_no_f
             m_flash_key_id = hotkeys.RegisterGlobal(Keys.F, KeyModifiers.Ctrl | KeyModifiers.Alt, "Ctrl+Alt+F");
 
             enemies = new Enemy[(int)Position.noe];
+            countdowns = new List<Countdown>();
 
             for (Position pos = Position.top; pos < Position.noe; ++pos)
             {
@@ -59,32 +61,55 @@ namespace raka_no_f
         {
             if (m.Msg == HotKeyManager.WM_HOTKEY)
             {
+                /* TODO: 
+                 * selected: {
+                 *      Position.top: false,
+                 *      Position.adc: true
+                 * }
+                 *      spell = spell_ids.find((int)m.Wparam))
+                 *      if(found):
+                 *          position = selected.find(=> x == true)
+                 *          if (position):
+                 *              position = false;
+                 *              processCountdown(whichever_was_true, whichever_spell_was_pressed, "{} {}: ".format(which.ToString(), spell.ToString()))
+                 * 
+                 * 
+                 * 
+                 * 
+                 * 
+                 */
                 if (m_flash_key_id == (int)m.WParam)
                 {
+                    Console.WriteLine("flash selected");
                     if (m_ad_selected)
                     {
                         m_ad_selected = false;
-                        // TODO: Create a new label here if there's not one already present for the given pos + summ combo
-                        //       could hash on the combo
-                        //       or check all existing countdowns positions and flashes (not bad since this only occurs when creating a new countdown)
-                        Countdown countdown = new Countdown(
-                            Position.adc, 
-                            Spell.flash, 
-                            this.label1, 
-                            enemies[(int)Position.adc].cd["flash"]
-                        );
+                        this.processCountdown(Position.adc, Spell.flash);
+                    }
+                    else if (m_top_selected)
+                    {
+                        m_top_selected = false;
+                        this.processCountdown(Position.top, Spell.flash);
                     }
                 }
-                // TODO: If we handle the 2nd hotkey (summ), we shouldn't process anything else.
-                if (m_ad_key_id == (int)m.WParam)
+                else if (m_ad_key_id == (int)m.WParam)
                 {
                     m_ad_selected = true;
+                    m_top_selected = false;
                     // TODO: timeout for bools?
+                    /* foreach (c in countdowns):
+                     *      if c.done:
+                     *          this.Controls.Remove(c.label)
+                     * we could also just do this.label.Dispose() in Countdown, when it is ready. Depends on what should know.
+                     */
                     Console.WriteLine("adc selected");
                 }
                 else if (m_top_key_id == (int)m.WParam)
                 {
-                    Console.WriteLine("top key has been hit");
+                    m_top_selected = true;
+                    m_ad_selected = false; //TODO: we don't want to allow "AD -> TOP -> FLASH" to register a flash for AD
+                                           // If any position hotkey has been pressed, set all bools to false
+                    Console.WriteLine("top selected");
                 }
                 else
                 {
@@ -122,11 +147,6 @@ namespace raka_no_f
 
         }
 
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void initializeTrayIcon()
         {
             contextMenu = new System.Windows.Forms.ContextMenu();
@@ -152,6 +172,56 @@ namespace raka_no_f
             // Tray icon
             menuItemExit.Click += new System.EventHandler(menuItemExit_Click);
             notifyIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(notifyIcon1_MouseDoubleClick);
+        }
+
+        private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private System.Windows.Forms.Label createDefaultLabel(string name)
+        {
+            System.Windows.Forms.Label label = new System.Windows.Forms.Label();
+            label.AutoSize = true;
+            label.BackColor = System.Drawing.Color.Transparent;
+            label.Font = new System.Drawing.Font("Franklin Gothic Medium", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            label.ForeColor = System.Drawing.Color.White;
+            label.Name = name;
+
+            return label;
+        }
+
+        private void processCountdown(Position position_, Spell spell_)
+        {
+            string labelName = position_.ToString() + " " + spell_.ToString();
+            string labelText = labelName + ": ";
+            Console.WriteLine("Creating/Updating " + labelName);
+
+            bool exists = false;
+            foreach (Countdown c in countdowns)
+            {
+                if (c.position == position_ && c.spell == spell_)
+                {
+                    Console.WriteLine("Existing countdown found. Resetting.");
+                    c.reset();
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists)
+            {
+                Console.WriteLine("Creating new countdown for " + labelName);
+                System.Windows.Forms.Label label = createDefaultLabel(labelName);
+                this.flowLayoutPanel1.Controls.Add(label);
+                countdowns.Add(new Countdown(
+                    position_,
+                    spell_,
+                    label,
+                    enemies[(int)position_].cd[spell_],
+                    labelText
+                ));
+            }
         }
     }
 }

@@ -21,6 +21,8 @@ namespace raka_no_f
 
         private System.Windows.Forms.ContextMenu contextMenu;
         private System.Windows.Forms.MenuItem menuItemExit;
+
+        private Dictionary<string, int[]> hotkeys;
         private int m_ad_key_id;
         private int m_top_key_id;
         private int m_flash_key_id;
@@ -37,13 +39,6 @@ namespace raka_no_f
             initializeTrayIcon();
             assignEventHandlers();
 
-            HotKeyManager hotkeys = new HotKeyManager(this.Handle);
-
-            // TODO: dictionary of hotkeys based on enum? string value of enum for unique key?
-            m_ad_key_id = hotkeys.RegisterGlobal(Keys.Q, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+Q");
-            m_top_key_id = hotkeys.RegisterGlobal(Keys.S, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+S");
-            m_flash_key_id = hotkeys.RegisterGlobal(Keys.F, KeyModifiers.Ctrl | KeyModifiers.Alt, "Ctrl+Alt+F");
-
             selected = new bool[(int)Position.noe];
             enemies = new Enemy[(int)Position.noe];
             countdowns = new List<Countdown>();
@@ -52,6 +47,20 @@ namespace raka_no_f
             {
                 enemies[(int)pos] = new Enemy(pos, false);
             }
+
+            HotKeyManager hotkeyManager = new HotKeyManager(this.Handle);
+
+            hotkeys = new Dictionary<string, int[]>
+            {
+                [nameof(Position)] = new int[(int)Position.noe],
+                [nameof(Spell)] = new int[(int)Spell.noe]
+            };
+
+            // TODO: default hotkeys
+            hotkeys[nameof(Position)][(int)Position.adc] = hotkeyManager.RegisterGlobal(Keys.Q, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+Q");
+            hotkeys[nameof(Position)][(int)Position.top] = hotkeyManager.RegisterGlobal(Keys.S, KeyModifiers.Alt | KeyModifiers.Shift, "Alt+Shift+S");
+            hotkeys[nameof(Spell)][(int)Spell.flash] = hotkeyManager.RegisterGlobal(Keys.F, KeyModifiers.Ctrl | KeyModifiers.Alt, "Ctrl+Alt+F");
+
             // TODO: get sums from RiotAPI to get more accurate CDs?
         }
 
@@ -59,50 +68,44 @@ namespace raka_no_f
         {
             if (m.Msg == HotKeyManager.WM_HOTKEY)
             {
-                /* TODO: 
-                1. Check if wParam is equal to any hotkey id for a summoner spell
-                2. if so:
-                    3. Check if any positions have been selected
-                    4. if so:
-                        5. deselect that position
-                        6. processCountdown(that_pos, that_spell)
-                 */
-                if (m_flash_key_id == (int)m.WParam)
+                int pressed;
+                int hotkey_id = (int)m.WParam;
+
+                // If a summoner spell hotkey was pressed
+                if (hotkeys[nameof(Spell)].Any(item => item == hotkey_id))
                 {
-                    Console.WriteLine("flash selected");
-                    if (selected[(int)Position.adc])
+                    pressed = Array.FindIndex(hotkeys[nameof(Spell)], item => item == hotkey_id);
+                    Console.WriteLine((Spell)pressed + " pressed.");
+
+                    // If a position is selected, create/update a countdown
+                    if (selected.Any(item => item == true))
                     {
-                        selected[(int)Position.adc] = false;
-                        this.processCountdown(Position.adc, Spell.flash);
-                    }
-                    else if (selected[(int)Position.top])
-                    {
-                        selected[(int)Position.top] = false;
-                        this.processCountdown(Position.top, Spell.flash);
+                        int position = Array.FindIndex(selected, item => item == true);
+
+                        selected[position] = false;
+                        processCountdown((Position)position, (Spell)pressed);
                     }
                 }
-                else if (m_ad_key_id == (int)m.WParam)
+                // If a position hotkey was pressed, clear any selected positions, and select the associated position.
+                else if (hotkeys[nameof(Position)].Any(item => item == hotkey_id))
                 {
+                    pressed = Array.FindIndex(hotkeys[nameof(Position)], item => item == hotkey_id);
+                    Console.WriteLine((Position)pressed + " pressed.");
+
                     Array.Clear(selected, 0, selected.Length);
-                    selected[(int)Position.adc] = true;
-                    // TODO: timeout for bools?
+                    selected[pressed] = true;
+                }
+                else
+                {
+                    Console.WriteLine("Hotkey ID not recognized.");
+                    //TODO: Unknown hotkey pressed
+                }
+
                     /* foreach (c in countdowns):
                      *      if c.done:
                      *          this.Controls.Remove(c.label)
                      * we could also just do this.label.Dispose() in Countdown, when it is ready. Depends on what should know.
                      */
-                    Console.WriteLine("adc selected");
-                }
-                else if (m_top_key_id == (int)m.WParam)
-                {
-                    Array.Clear(selected, 0, selected.Length);
-                    selected[(int)Position.top] = true;
-                    Console.WriteLine("top selected");
-                }
-                else
-                {
-                    Console.WriteLine("unknown hotkey pressed");
-                }
             }
             base.WndProc(ref m);
         }

@@ -19,6 +19,7 @@ namespace raka_no_f
     {
         public const int WM_HOTKEY = 0x0312;
 
+        private int m_lastId;
         private List<int> m_registered;
         private IntPtr m_handle;
 
@@ -30,6 +31,7 @@ namespace raka_no_f
 
         public HotKeyManager(IntPtr handle)
         {
+            m_lastId = 1;
             m_handle = handle;
             m_registered = new List<int>();
         }
@@ -37,7 +39,7 @@ namespace raka_no_f
         public int RegisterGlobal(Keys key, KeyModifiers modifiers, string msg)
         {
             // Arbitrary id uses count of the registered hotkeys.
-            int id = m_registered.Count;
+            int id = m_lastId;
 
             if (!RegisterHotKey(m_handle, id, (int)modifiers, key.GetHashCode()))
             {
@@ -48,6 +50,7 @@ namespace raka_no_f
             {
                 m_registered.Add(id);
                 Console.WriteLine("Registered hotkey #" + id.ToString() + ": " + msg);
+                m_lastId++;
             }
 
             return id;

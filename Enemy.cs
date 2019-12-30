@@ -17,12 +17,14 @@ namespace raka_no_f
     }
 
     // TODO: place enums in appropriate file
+    // NOTE: We depend on casting integers to Enum, so we can't have multiple enums w/ same value
     enum Spell
     {
-        flash,
-        ignite,
-        exhaust,
-        teleport
+        flash = 0,
+        ignite = 1,
+        exhaust = 2,
+        teleport = 3,
+        noe
     }
 
     class Enemy

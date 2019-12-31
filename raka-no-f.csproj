@@ -58,7 +58,6 @@
     <Compile Include="HotKeyForm.Designer.cs">
       <DependentUpon>HotKeyForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="HotKeyManager.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -44,7 +44,6 @@ namespace raka_no_f
         private List<Countdown> countdowns;
 
         private bool hook_enabled;
-        private HotKeyManager hotkeyManager;
         private Dictionary<string, KeyEventArgs[]> hotkeys;
 
         public Form1()
@@ -70,36 +69,19 @@ namespace raka_no_f
                 [nameof(Spell)] = new KeyEventArgs[(int)Spell.noe]
             };
 
-            //hotkeyManager = new HotKeyManager(this.Handle);
             hotkeyForm = new HotKeyForm(hotkeys);
 
             Timer ingameChecker = new Timer();
-            ingameChecker.Interval = 10000; // Every 10s
+            ingameChecker.Interval = 5000; // Every 5s
             ingameChecker.Tick += new System.EventHandler(this.checkIfInGame_Tick);
             ingameChecker.Start();
 
+            Timer countdownMonitor = new Timer();
+            countdownMonitor.Interval = 5000; // Every 5s
+            countdownMonitor.Tick += new System.EventHandler(this.monitorCountdowns_Tick);
+            countdownMonitor.Start();
+
             hook.KeyDown += new KeyEventHandler(hook_KeyDown);
-            hook.KeyUp += new KeyEventHandler(hook_KeyUp);
-        }
-
-        protected override void WndProc(ref Message m)
-        {
-            //TODO: put this on its own timer?
-            for (int i = countdowns.Count - 1; countdowns.Count > 0 && i >= 0; i--)
-            {
-                if (countdowns[i].done)
-                {
-                    // Remove the label from the flow layout panel
-                    this.flowLayoutPanel1.Controls.Remove(countdowns[i].label);
-
-                    // Release resources of label
-                    countdowns[i].label.Dispose();
-
-                    // Remove the countdown
-                    countdowns.RemoveAt(i);
-                }
-            }
-            base.WndProc(ref m);
         }
 
         private void assignDefaultHotkeys()
@@ -160,13 +142,13 @@ namespace raka_no_f
             int pressed;
 
             // If a summoner spell hotkey was pressed
-            // TODO: use contains instead?
             if (hotkeys[nameof(Spell)].Any(item => keyEventArgsEquals(item, e)))
             {
                 pressed = Array.FindIndex(hotkeys[nameof(Spell)], item => keyEventArgsEquals(item, e));
                 Console.WriteLine((Spell)pressed + " pressed.");
 
-                if (selected.Any(item => item == true))
+                // If a position is selected
+                if (selected.Contains(true))
                 {
                     int position = Array.FindIndex(selected, item => item == true);
 
@@ -187,11 +169,6 @@ namespace raka_no_f
             {
                 Console.WriteLine("Hotkey ID not recognized.");
             }
-            e.Handled = true;
-        }
-
-        private void hook_KeyUp(object sender, KeyEventArgs e)
-        {
             e.Handled = true;
         }
 
@@ -285,6 +262,27 @@ namespace raka_no_f
 
                 // Remove the countdown
                 countdowns.RemoveAt(i);
+            }
+        }
+
+        private void monitorCountdowns_Tick(object sender, EventArgs e)
+        {
+            if (countdowns.Count > 0)
+            {
+                for (int i = countdowns.Count - 1; i >= 0; i--)
+                {
+                    if (countdowns[i].done)
+                    {
+                        // Remove the label from the flow layout panel
+                        this.flowLayoutPanel1.Controls.Remove(countdowns[i].label);
+
+                        // Release resources of label
+                        countdowns[i].label.Dispose();
+
+                        // Remove the countdown
+                        countdowns.RemoveAt(i);
+                    }
+                }
             }
         }
 

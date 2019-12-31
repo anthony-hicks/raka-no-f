@@ -19,9 +19,9 @@ namespace raka_no_f
     {
         public const int WM_HOTKEY = 0x0312;
 
-        private int m_lastId;
-        private List<int> m_registered;
-        private IntPtr m_handle;
+        private int lastId;
+        private List<int> registered;
+        private IntPtr handle;
 
         [DllImport("user32.dll")]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, int modifiers, int key);
@@ -29,39 +29,57 @@ namespace raka_no_f
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        public HotKeyManager(IntPtr handle)
+        public HotKeyManager(IntPtr handle_)
         {
-            m_lastId = 1;
-            m_handle = handle;
-            m_registered = new List<int>();
+            lastId = 1;
+            handle = handle_;
+            registered = new List<int>();
         }
 
         public int RegisterGlobal(Keys key, KeyModifiers modifiers, string msg)
         {
             // Arbitrary id uses count of the registered hotkeys.
-            int id = m_lastId;
+            int id = lastId;
 
-            if (!RegisterHotKey(m_handle, id, (int)modifiers, key.GetHashCode()))
+            if (!RegisterHotKey(handle, id, (int)modifiers, key.GetHashCode()))
             {
                 MessageBox.Show("Error registering hotkey " + key.ToString());
                 System.Windows.Forms.Application.Exit();
             }
             else
             {
-                m_registered.Add(id);
+                registered.Add(id);
                 Console.WriteLine("Registered hotkey #" + id.ToString() + ": " + msg);
-                m_lastId++;
+                lastId++;
             }
 
             return id;
         }
 
+        public void UnregisterGlobal(int hotkey_id)
+        {
+            if (!UnregisterHotKey(handle, hotkey_id))
+            {
+                MessageBox.Show("Error unregistering hotkey " + hotkey_id);
+                System.Windows.Forms.Application.Exit();
+            }
+            else
+            {
+                registered.Remove(hotkey_id);
+            }
+        }
+
+        public void UnregisterAll()
+        {
+            foreach (int id in registered)
+            {
+                UnregisterGlobal(id);
+            }
+        }
+
         ~HotKeyManager()
         {
-            foreach (int id in m_registered)
-            {
-                UnregisterHotKey(m_handle, id);
-            }
+            this.UnregisterAll();
         }
     }
 }

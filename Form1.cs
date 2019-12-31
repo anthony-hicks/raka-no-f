@@ -8,12 +8,17 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 //TODO: standardize m_ members and param_
 //TODO: add customization of hotkeys via trayIcon context menu
 //TODO: no window icon when not in tray
 //TODO: have overlay + tray when league is running (in game)
 //      only have tray when league isn't running
+// TODO: separate the in-game form, hotkey settings form, and tray icon into separate files
+//       and use main/program to instantiate.
+//TODO: We want the hotkey form to process the hotkeys when it's open, can we do that
+//      without unregistering hotkeys?
 
 namespace raka_no_f
 {
@@ -25,13 +30,18 @@ namespace raka_no_f
         [DllImport("user32.dll")]
         private static extern bool UnRegisterHotKey(IntPtr hWnd, int id);
 
+        private GlobalKeyboardHook hook = new GlobalKeyboardHook();
+
+        private HotKeyForm hotkeyForm;
         private System.Windows.Forms.ContextMenu contextMenu;
         private System.Windows.Forms.MenuItem menuItemExit;
+        private System.Windows.Forms.MenuItem menuItemHotkeys;
 
         private bool[] selected;
         private Enemy[] enemies;
         private List<Countdown> countdowns;
 
+        private bool hotkeys_registered;
         private HotKeyManager hotkeyManager;
         private Dictionary<string, int[]> hotkeys;
 
@@ -48,7 +58,8 @@ namespace raka_no_f
 
             for (Position pos = Position.top; pos < Position.noe; ++pos)
             {
-                enemies[(int)pos] = new Enemy(pos, false);
+                enemies[(int)pos] = new Enemy(pos, false); // We assume no mods to summ spell CDs for now.
+                // TODO: get sums from RiotAPI to get more accurate CDs?
             }
 
             hotkeys = new Dictionary<string, int[]>
@@ -58,9 +69,19 @@ namespace raka_no_f
             };
 
             hotkeyManager = new HotKeyManager(this.Handle);
-            assignDefaultHotkeys();
+            hotkeyForm = new HotKeyForm(hotkeys);
+            //assignDefaultHotkeys();
 
-            // TODO: get sums from RiotAPI to get more accurate CDs?
+            Timer ingameChecker = new Timer();
+            ingameChecker.Interval = 20000; // 20s
+            ingameChecker.Tick += new System.EventHandler(this.checkIfInGame_Tick);
+            ingameChecker.Start();
+
+            hook.HookedKeys.Add(Keys.A);
+            hook.HookedKeys.Add(Keys.B);
+
+            hook.KeyDown += new KeyEventHandler(hook_KeyDown);
+            hook.KeyUp += new KeyEventHandler(hook_KeyUp);
         }
 
         protected override void WndProc(ref Message m)
@@ -71,6 +92,7 @@ namespace raka_no_f
                 int hotkey_id = (int)m.WParam;
 
                 // If a summoner spell hotkey was pressed
+                // TODO: use contains instead?
                 if (hotkeys[nameof(Spell)].Any(item => item == hotkey_id))
                 {
                     pressed = Array.FindIndex(hotkeys[nameof(Spell)], item => item == hotkey_id);
@@ -101,7 +123,7 @@ namespace raka_no_f
             }
 
             //TODO: put this on its own timer?
-            for (int i = countdowns.Count - 1; i >= 0; i--)
+            for (int i = countdowns.Count - 1; countdowns.Count > 0 && i >= 0; i--)
             {
                 if (countdowns[i].done)
                 {
@@ -120,15 +142,69 @@ namespace raka_no_f
 
         private void assignDefaultHotkeys()
         {
-            hotkeys[nameof(Position)][(int)Position.top] = hotkeyManager.RegisterGlobal(Keys.NumPad7, KeyModifiers.None, "NumPad7");
+            // Add a hook for the keycode of the hotkey
+            //hotkeys[nameof(Position)][(int)Position.top] = k;
+            // 
+            //hotkeys[nameof(Position)][(int)Position.top] = hotkeyManager.RegisterGlobal(Keys.NumPad7, KeyModifiers.None, "NumPad7");
+            hotkeyForm.hotkeyControls[Position.top.ToString()].Hotkey = Keys.NumPad7;
+            hotkeyForm.hotkeyControls[Position.top.ToString()].HotkeyModifiers = Keys.None;
+
             hotkeys[nameof(Position)][(int)Position.jg] = hotkeyManager.RegisterGlobal(Keys.NumPad4, KeyModifiers.None, "NumPad4");
+            hotkeyForm.hotkeyControls[Position.jg.ToString()].Hotkey = Keys.NumPad4;
+            hotkeyForm.hotkeyControls[Position.jg.ToString()].HotkeyModifiers = Keys.None;
+
             hotkeys[nameof(Position)][(int)Position.mid] = hotkeyManager.RegisterGlobal(Keys.NumPad1, KeyModifiers.None, "NumPad1");
+            hotkeyForm.hotkeyControls[Position.mid.ToString()].Hotkey = Keys.NumPad1;
+            hotkeyForm.hotkeyControls[Position.mid.ToString()].HotkeyModifiers = Keys.None;
+
             hotkeys[nameof(Position)][(int)Position.adc] = hotkeyManager.RegisterGlobal(Keys.NumPad0, KeyModifiers.None, "NumPad0");
+            hotkeyForm.hotkeyControls[Position.adc.ToString()].Hotkey = Keys.NumPad0;
+            hotkeyForm.hotkeyControls[Position.adc.ToString()].HotkeyModifiers = Keys.None;
+
             hotkeys[nameof(Position)][(int)Position.sup] = hotkeyManager.RegisterGlobal(Keys.Decimal, KeyModifiers.None, "Decimal");
+            hotkeyForm.hotkeyControls[Position.sup.ToString()].Hotkey = Keys.Decimal;
+            hotkeyForm.hotkeyControls[Position.sup.ToString()].HotkeyModifiers = Keys.None;
 
             hotkeys[nameof(Spell)][(int)Spell.flash] = hotkeyManager.RegisterGlobal(Keys.Add, KeyModifiers.None, "Add");
+            hotkeyForm.hotkeyControls[Spell.flash.ToString()].Hotkey = Keys.Add;
+            hotkeyForm.hotkeyControls[Spell.flash.ToString()].HotkeyModifiers = Keys.None;
+
             hotkeys[nameof(Spell)][(int)Spell.ignite] = hotkeyManager.RegisterGlobal(Keys.NumPad9, KeyModifiers.None, "NumPad9");
+            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].Hotkey = Keys.NumPad9;
+            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].HotkeyModifiers = Keys.None;
+
             hotkeys[nameof(Spell)][(int)Spell.teleport] = hotkeyManager.RegisterGlobal(Keys.Enter, KeyModifiers.None, "Enter");
+            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].Hotkey = Keys.Enter;
+            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].HotkeyModifiers = Keys.None;
+        }
+
+        private void hook_KeyDown(object sender, KeyEventArgs e)
+        {
+            Console.WriteLine("hook KeyDown " + e.KeyCode.ToString());
+            if ((Control.ModifierKeys & Keys.Control) == Keys.Control)
+            {
+                Console.WriteLine("(keydown) Control is active.");
+            }
+            e.Handled = true;
+        }
+
+        private void hook_KeyUp(object sender, KeyEventArgs e)
+        {
+            // TODO: put all wndproc key stuff in here
+            Console.WriteLine("hook KeyUp " + e.KeyCode.ToString());
+            // modifier = KeyData | KeyCode
+            if (e.KeyCode == Keys.A && (Control.ModifierKeys & Keys.Control) == Keys.Control)
+            {
+                Console.WriteLine("CTRL+A");
+                //Console.WriteLine("(keyup) Control is active.");
+            }
+
+            KeyEventArgs k = new KeyEventArgs(Keys.NumPad7 | Keys.Control);
+            Console.WriteLine("k.Control = " + k.Control);
+            Console.WriteLine("k.key = " + k.KeyCode);
+            Console.WriteLine("k.KeyData = " + k.KeyData);
+            Console.WriteLine("k.Modifiers = " + k.Modifiers);
+            e.Handled = true;
         }
 
         private void Form1_Resize(object sender, EventArgs e)
@@ -148,6 +224,13 @@ namespace raka_no_f
             notifyIcon.Visible = false;
         }
 
+        private void menuItemHotkeys_Click(object sender, EventArgs e)
+        {
+            hotkeyForm.Show();
+            hotkeyForm.WindowState = FormWindowState.Normal;
+            hotkeyForm.Activate();
+        }
+
         private void menuItemExit_Click(object sender, EventArgs e)
         {
             // Close the form, which closes the application.
@@ -163,17 +246,24 @@ namespace raka_no_f
         {
             contextMenu = new System.Windows.Forms.ContextMenu();
             menuItemExit = new System.Windows.Forms.MenuItem();
+            menuItemHotkeys = new System.Windows.Forms.MenuItem();
 
             contextMenu.MenuItems.AddRange(
-                new System.Windows.Forms.MenuItem[] { menuItemExit }
+                new System.Windows.Forms.MenuItem[] { 
+                    menuItemExit,
+                    menuItemHotkeys
+                }
             );
 
-            menuItemExit.Index = 0;
+            menuItemHotkeys.Index = 0;
+            menuItemHotkeys.Text = "Hotkeys";
+
+            menuItemExit.Index = 1;
             menuItemExit.Text = "Exit";
 
             notifyIcon.ContextMenu = contextMenu;
-            notifyIcon.Text = "notifyIcon text here";
-            notifyIcon.Visible = false;
+            notifyIcon.Text = "raka-no-f";
+            notifyIcon.Visible = true;
         }
 
         private void assignEventHandlers()
@@ -182,8 +272,8 @@ namespace raka_no_f
             this.Resize += new System.EventHandler(this.Form1_Resize);
 
             // Tray icon
+            menuItemHotkeys.Click += new System.EventHandler(menuItemHotkeys_Click);
             menuItemExit.Click += new System.EventHandler(menuItemExit_Click);
-            notifyIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(notifyIcon1_MouseDoubleClick);
         }
 
         private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
@@ -201,6 +291,26 @@ namespace raka_no_f
             label.Name = name;
 
             return label;
+        }
+
+        private void checkIfInGame_Tick(object sender, EventArgs e)
+        {
+            Process[] processes = Process.GetProcessesByName("League of Legends");
+            bool game_running = (processes.Length != 0);
+            Console.WriteLine("game is running? " + game_running);
+
+            if (game_running && !hotkeys_registered)
+            {
+                this.assignDefaultHotkeys();
+                //hook.hook();
+                hotkeys_registered = true;
+            }
+            else if (!game_running && hotkeys_registered)
+            {
+                hotkeyManager.UnregisterAll();
+                //hook.unhook(); TODO
+                hotkeys_registered = false;
+            }
         }
 
         private void processCountdown(Position position_, Spell spell_)

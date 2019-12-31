@@ -12,14 +12,14 @@ namespace raka_no_f
 {
     public partial class HotKeyForm : Form
     {
-        private Dictionary<string, int[]> ids;
+        private Dictionary<string, KeyEventArgs[]> hotkeys;
         public Dictionary<string, exscape.HotkeyControl> hotkeyControls;
 
-        public HotKeyForm(Dictionary<string, int[]> hotkeys)
+        public HotKeyForm(Dictionary<string, KeyEventArgs[]> hotkeys_)
         {
             InitializeComponent();
 
-            ids = hotkeys;
+            hotkeys = hotkeys_;
 
             hotkeyControls = new Dictionary<string, exscape.HotkeyControl>();
             this.Resize += new System.EventHandler(this.onResize);

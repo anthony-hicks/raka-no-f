@@ -27,14 +27,14 @@ namespace raka_no_f
     {
         private Position position;
         private bool has_insight; // TODO: real rune names that change summ spell cd
-        public Dictionary<Spell, uint> cd { get; } // Could also use indexing using enu, sparse array
+        public Dictionary<Spell, int> cd { get; } // Could also use indexing using enu, sparse array
 
         public Enemy(Position pos_, bool has_insight_)
         {
             position = pos_;
             has_insight = has_insight_;
 
-            cd = new Dictionary<Spell, uint>();
+            cd = new Dictionary<Spell, int>();
             cd[Spell.flash] = 300; //TODO: defaults?
             cd[Spell.ignite] = 180;
             cd[Spell.exhaust] = 180;

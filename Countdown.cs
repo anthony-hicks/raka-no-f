@@ -13,9 +13,9 @@ namespace raka_no_f
         public Spell spell { get; }
         public bool done { get; private set; }
 
-        private uint m_alert_remaining;
-        private uint m_initial;
-        private uint m_remaining;
+        private int m_alert_remaining;
+        private int m_initial;
+        private int m_remaining;
         private string m_message;
         private System.Windows.Forms.Timer m_timer;
         private System.Windows.Forms.Timer m_alert_timer;
@@ -23,7 +23,7 @@ namespace raka_no_f
         public Countdown(Position pos_, 
                          Spell spell_, 
                          System.Windows.Forms.Label label_, 
-                         uint remaining_,
+                         int remaining_,
                          string message_)
         {
             label = label_;
@@ -54,7 +54,7 @@ namespace raka_no_f
 
         private void onTick(object sender, System.EventArgs e)
         {
-            if (m_remaining == 0)
+            if (m_remaining < 0)
             {
                 m_timer.Stop();
                 m_alert_timer.Start();
@@ -68,7 +68,7 @@ namespace raka_no_f
 
         private void onAlertTick(object sender, System.EventArgs e)
         {
-            if (m_alert_remaining == 0)
+            if (m_alert_remaining < 0)
             {
                 done = true;
                 m_alert_timer.Stop();

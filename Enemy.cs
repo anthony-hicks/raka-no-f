@@ -17,9 +17,9 @@ namespace raka_no_f
     enum Spell
     {
         flash = 0,
-        ignite = 1,
-        exhaust = 2,
-        teleport = 3,
+        teleport = 1,
+        ignite = 2,
+        exhaust = 3,
         noe
     }
 

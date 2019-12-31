@@ -70,6 +70,7 @@ namespace raka_no_f
             };
 
             hotkeyForm = new HotKeyForm(hotkeys);
+            populateDefaultHotkeyOptions();
 
             Timer ingameChecker = new Timer();
             ingameChecker.Interval = 5000; // Every 5s
@@ -82,54 +83,6 @@ namespace raka_no_f
             countdownMonitor.Start();
 
             hook.KeyDown += new KeyEventHandler(hook_KeyDown);
-        }
-
-        private void assignDefaultHotkeys()
-        {
-            hook.HookedKeys.Add(Keys.NumPad7);
-            hotkeys[nameof(Position)][(int)Position.top] = new KeyEventArgs(Keys.NumPad7);
-            hotkeyForm.hotkeyControls[Position.top.ToString()].Hotkey = Keys.NumPad7;
-            hotkeyForm.hotkeyControls[Position.top.ToString()].HotkeyModifiers = Keys.None;
-
-            hook.HookedKeys.Add(Keys.NumPad4);
-            hotkeys[nameof(Position)][(int)Position.jg] = new KeyEventArgs(Keys.NumPad4);
-            hotkeyForm.hotkeyControls[Position.jg.ToString()].Hotkey = Keys.NumPad4;
-            hotkeyForm.hotkeyControls[Position.jg.ToString()].HotkeyModifiers = Keys.None;
-
-            hook.HookedKeys.Add(Keys.NumPad1);
-            hotkeys[nameof(Position)][(int)Position.mid] = new KeyEventArgs(Keys.NumPad1);
-            hotkeyForm.hotkeyControls[Position.mid.ToString()].Hotkey = Keys.NumPad1;
-            hotkeyForm.hotkeyControls[Position.mid.ToString()].HotkeyModifiers = Keys.None;
-
-            hook.HookedKeys.Add(Keys.NumPad0);
-            hotkeys[nameof(Position)][(int)Position.adc] = new KeyEventArgs(Keys.NumPad0);
-            hotkeyForm.hotkeyControls[Position.adc.ToString()].Hotkey = Keys.NumPad0;
-            hotkeyForm.hotkeyControls[Position.adc.ToString()].HotkeyModifiers = Keys.None;
-
-            hook.HookedKeys.Add(Keys.Decimal);
-            hotkeys[nameof(Position)][(int)Position.sup] = new KeyEventArgs(Keys.Decimal);
-            hotkeyForm.hotkeyControls[Position.sup.ToString()].Hotkey = Keys.Decimal;
-            hotkeyForm.hotkeyControls[Position.sup.ToString()].HotkeyModifiers = Keys.None;
-
-            hook.HookedKeys.Add(Keys.Add);
-            hotkeys[nameof(Spell)][(int)Spell.flash] = new KeyEventArgs(Keys.Add);
-            hotkeyForm.hotkeyControls[Spell.flash.ToString()].Hotkey = Keys.Add;
-            hotkeyForm.hotkeyControls[Spell.flash.ToString()].HotkeyModifiers = Keys.None;
-
-            hook.HookedKeys.Add(Keys.NumPad9);
-            hotkeys[nameof(Spell)][(int)Spell.ignite] = new KeyEventArgs(Keys.NumPad9);
-            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].Hotkey = Keys.NumPad9;
-            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].HotkeyModifiers = Keys.None;
-
-            hook.HookedKeys.Add(Keys.U);
-            hotkeys[nameof(Spell)][(int)Spell.exhaust] = new KeyEventArgs(Keys.U | Keys.Control);
-            hotkeyForm.hotkeyControls[Spell.exhaust.ToString()].Hotkey = Keys.U;
-            hotkeyForm.hotkeyControls[Spell.exhaust.ToString()].HotkeyModifiers = Keys.Control;
-
-            hook.HookedKeys.Add(Keys.Enter);
-            hotkeys[nameof(Spell)][(int)Spell.teleport] = new KeyEventArgs(Keys.Enter);
-            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].Hotkey = Keys.Enter;
-            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].HotkeyModifiers = Keys.None;
         }
 
         private bool keyEventArgsEquals(KeyEventArgs l, KeyEventArgs r)
@@ -186,7 +139,6 @@ namespace raka_no_f
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
         }
 
         private void initializeTrayIcon()
@@ -224,10 +176,9 @@ namespace raka_no_f
 
         private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
-        private System.Windows.Forms.Label createDefaultLabel(string name)
+        public static System.Windows.Forms.Label createDefaultLabel(string name)
         {
             System.Windows.Forms.Label label = new System.Windows.Forms.Label();
             label.AutoSize = true;
@@ -292,7 +243,7 @@ namespace raka_no_f
 
             if (game_running && !hook_enabled)
             {
-                this.assignDefaultHotkeys();
+                this.enableDefaultHotkeys();
                 hook.hook();
                 hook_enabled = true;
             }
@@ -333,6 +284,58 @@ namespace raka_no_f
                     labelText
                 ));
             }
+        }
+
+        private void enableDefaultHotkeys()
+        {
+            hook.HookedKeys.Add(Keys.NumPad7);
+            hook.HookedKeys.Add(Keys.NumPad4);
+            hook.HookedKeys.Add(Keys.NumPad1);
+            hook.HookedKeys.Add(Keys.NumPad0);
+            hook.HookedKeys.Add(Keys.Decimal);
+            hook.HookedKeys.Add(Keys.Add);
+            hook.HookedKeys.Add(Keys.NumPad9);
+            hook.HookedKeys.Add(Keys.U);
+            hook.HookedKeys.Add(Keys.Enter);
+        }
+
+        private void populateDefaultHotkeyOptions()
+        {
+            hotkeys[nameof(Position)][(int)Position.top] = new KeyEventArgs(Keys.NumPad7);
+            hotkeyForm.hotkeyControls[Position.top.ToString()].Hotkey = Keys.NumPad7;
+            hotkeyForm.hotkeyControls[Position.top.ToString()].HotkeyModifiers = Keys.None;
+
+            hotkeys[nameof(Position)][(int)Position.jg] = new KeyEventArgs(Keys.NumPad4);
+            hotkeyForm.hotkeyControls[Position.jg.ToString()].Hotkey = Keys.NumPad4;
+            hotkeyForm.hotkeyControls[Position.jg.ToString()].HotkeyModifiers = Keys.None;
+
+            hotkeys[nameof(Position)][(int)Position.mid] = new KeyEventArgs(Keys.NumPad1);
+            hotkeyForm.hotkeyControls[Position.mid.ToString()].Hotkey = Keys.NumPad1;
+            hotkeyForm.hotkeyControls[Position.mid.ToString()].HotkeyModifiers = Keys.None;
+
+            hotkeys[nameof(Position)][(int)Position.adc] = new KeyEventArgs(Keys.NumPad0);
+            hotkeyForm.hotkeyControls[Position.adc.ToString()].Hotkey = Keys.NumPad0;
+            hotkeyForm.hotkeyControls[Position.adc.ToString()].HotkeyModifiers = Keys.None;
+
+            hotkeys[nameof(Position)][(int)Position.sup] = new KeyEventArgs(Keys.Decimal);
+            hotkeyForm.hotkeyControls[Position.sup.ToString()].Hotkey = Keys.Decimal;
+            hotkeyForm.hotkeyControls[Position.sup.ToString()].HotkeyModifiers = Keys.None;
+
+            hotkeys[nameof(Spell)][(int)Spell.flash] = new KeyEventArgs(Keys.Add);
+            hotkeyForm.hotkeyControls[Spell.flash.ToString()].Hotkey = Keys.Add;
+            hotkeyForm.hotkeyControls[Spell.flash.ToString()].HotkeyModifiers = Keys.None;
+
+            hotkeys[nameof(Spell)][(int)Spell.ignite] = new KeyEventArgs(Keys.NumPad9);
+            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].Hotkey = Keys.NumPad9;
+            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].HotkeyModifiers = Keys.None;
+
+            hotkeys[nameof(Spell)][(int)Spell.exhaust] = new KeyEventArgs(Keys.U | Keys.Control);
+            hotkeyForm.hotkeyControls[Spell.exhaust.ToString()].Hotkey = Keys.U;
+            hotkeyForm.hotkeyControls[Spell.exhaust.ToString()].HotkeyModifiers = Keys.Control;
+
+            hotkeys[nameof(Spell)][(int)Spell.teleport] = new KeyEventArgs(Keys.Enter);
+            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].Hotkey = Keys.Enter;
+            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].HotkeyModifiers = Keys.None;
         }
     }
 }

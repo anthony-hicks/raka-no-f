@@ -1,14 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Linq;
+using System.Windows.Forms;
 
 //TODO: standardize m_ members and param_
 // TODO: separate the in-game form, hotkey settings form, and tray icon into separate files
@@ -135,7 +129,7 @@ namespace raka_no_f
             menuItemHotkeys = new System.Windows.Forms.MenuItem();
 
             contextMenu.MenuItems.AddRange(
-                new System.Windows.Forms.MenuItem[] { 
+                new System.Windows.Forms.MenuItem[] {
                     menuItemExit,
                     menuItemHotkeys
                 }

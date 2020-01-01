@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace raka_no_f
@@ -163,7 +158,7 @@ namespace raka_no_f
 
         private void hotkeyControl_TextChanged(object sender, EventArgs e)
         {
-            changed.Add((exscape.HotkeyControl) sender);
+            changed.Add((exscape.HotkeyControl)sender);
         }
 
         private void Form2_Load(object sender, EventArgs e)

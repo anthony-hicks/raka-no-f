@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace raka_no_f
+﻿namespace raka_no_f
 {
     class Countdown
     {
@@ -20,9 +14,9 @@ namespace raka_no_f
         private System.Windows.Forms.Timer m_timer;
         private System.Windows.Forms.Timer m_alert_timer;
 
-        public Countdown(Position pos_, 
-                         Spell spell_, 
-                         System.Windows.Forms.Label label_, 
+        public Countdown(Position pos_,
+                         Spell spell_,
+                         System.Windows.Forms.Label label_,
                          int remaining_,
                          string message_)
         {

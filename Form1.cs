@@ -47,7 +47,7 @@ namespace raka_no_f
 
             // Checks if League of Legends is running
             Timer ingameChecker = new Timer();
-            ingameChecker.Interval = 3000;
+            ingameChecker.Interval = 2000;
             ingameChecker.Tick += new System.EventHandler(this.checkIfInGame_Tick);
             ingameChecker.Start();
 

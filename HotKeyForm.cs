@@ -10,7 +10,6 @@ namespace raka_no_f
         public HashSet<exscape.HotkeyControl> changed = new HashSet<exscape.HotkeyControl>();
 
         private HotKeyManager hkManager;
-        private Dictionary<string, KeyEventArgs[]> hotkeys;
         public Dictionary<string, HotkeyDisplayControl> hkDisplayControls = new Dictionary<string, HotkeyDisplayControl>();
 
         public HotKeyForm(HotKeyManager hkManager_)

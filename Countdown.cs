@@ -1,6 +1,8 @@
-﻿namespace raka_no_f
+﻿using System;
+
+namespace raka_no_f
 {
-    class Countdown
+    class Countdown : System.IDisposable
     {
         public System.Windows.Forms.Label label { get; private set; }
         public Position position { get; }
@@ -73,6 +75,13 @@
                 label.Text = m_message + "UP";
                 m_alert_remaining--;
             }
+        }
+
+        public void Dispose()
+        {
+            ((IDisposable)m_timer).Dispose();
+            ((IDisposable)m_alert_timer).Dispose();
+            ((IDisposable)label).Dispose();
         }
     }
 }

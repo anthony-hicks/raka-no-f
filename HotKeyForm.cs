@@ -18,14 +18,12 @@ namespace raka_no_f
         private Dictionary<string, KeyEventArgs[]> hotkeys;
         public Dictionary<string, HotkeyDisplayControl> hkDisplayControls = new Dictionary<string, HotkeyDisplayControl>();
 
-        // TODO: Don't need 2/3 params if we pass the whole hkManager...
-        public HotKeyForm(HotKeyManager hkManager_, KeyEventArgs[] spellKeys, KeyEventArgs[] positionKeys)
+        public HotKeyForm(HotKeyManager hkManager_)
         {
             InitializeComponent();
             hkManager = hkManager_;
             this.button1.Click += new EventHandler(this.okButton_Click);
             this.AcceptButton = this.button1;
-            //hotkeys = hotkeys_; TODO
 
             this.Resize += new System.EventHandler(this.onResize);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.onClose);

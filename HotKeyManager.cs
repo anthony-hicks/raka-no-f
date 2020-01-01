@@ -9,8 +9,6 @@ namespace raka_no_f
 {
     public class HotKeyManager
     {
-        // TODO: I feel like spellKeys and positionKeys don't belong here. HKM shouldn't know anything
-        //       about how the hotkeys are being used.
         public KeyEventArgs[] spellKeys { get; set; }
         public KeyEventArgs[] positionKeys { get; set; }
         public bool hook_enabled { get; private set; }
@@ -24,7 +22,6 @@ namespace raka_no_f
             spellKeys = new KeyEventArgs[(int)Spell.noe];
             positionKeys = new KeyEventArgs[(int)Position.noe];
 
-            //_hook.unhook(); Start off unhooked?
             _hook.KeyDown += new KeyEventHandler(keyDownHandler);
         }
 

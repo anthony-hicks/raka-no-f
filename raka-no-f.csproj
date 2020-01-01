@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cooldowns.cs" />
     <Compile Include="Countdown.cs" />
     <Compile Include="Enemy.cs" />
     <Compile Include="GlobalKeyboardHook.cs" />

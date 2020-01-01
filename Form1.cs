@@ -11,7 +11,6 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 
 //TODO: standardize m_ members and param_
-//TODO: add customization of hotkeys via trayIcon context menu
 // TODO: separate the in-game form, hotkey settings form, and tray icon into separate files
 //       and use main/program to instantiate.
 
@@ -47,8 +46,10 @@ namespace raka_no_f
             }
 
             hkManager = new HotKeyManager(this.hook_KeyDown);
-            hotkeyForm = new HotKeyForm(hkManager, hkManager.spellKeys, hkManager.positionKeys);
+            hotkeyForm = new HotKeyForm(hkManager);
+
             populateDefaultHotkeyOptions();
+            hkManager.disableHotkeys();
 
             // Checks if League of Legends is running
             Timer ingameChecker = new Timer();
@@ -70,41 +71,45 @@ namespace raka_no_f
 
         private void hook_KeyDown(object sender, KeyEventArgs e)
         {
-            int pressed;
-
-            // If a summoner spell hotkey was pressed
-            if (hkManager.spellKeys.Any(item => keyEventArgsEquals(item, e)))
+            // We don't want to process the hotkeys if we're changing hotkeys
+            if (!hotkeyForm.Visible)
             {
-                pressed = Array.FindIndex(hkManager.spellKeys, item => keyEventArgsEquals(item, e));
-                Console.WriteLine((Spell)pressed + " pressed.");
+                int pressed;
 
-                // If a position is selected
-                if (selected.Contains(true))
+                // If a summoner spell hotkey was pressed
+                if (hkManager.spellKeys.Any(item => keyEventArgsEquals(item, e)))
                 {
-                    int position = Array.FindIndex(selected, item => item == true);
+                    pressed = Array.FindIndex(hkManager.spellKeys, item => keyEventArgsEquals(item, e));
+                    Console.WriteLine((Spell)pressed + " pressed.");
 
-                    selected[position] = false;
-                    processCountdown((Position)position, (Spell)pressed);
+                    // If a position is selected
+                    if (selected.Contains(true))
+                    {
+                        int position = Array.FindIndex(selected, item => item == true);
+
+                        selected[position] = false;
+                        processCountdown((Position)position, (Spell)pressed);
+                    }
                 }
-            }
-            // If a position hotkey was pressed, clear any selected positions, and select the associated position.
-            else if (hkManager.positionKeys.Any(item => keyEventArgsEquals(item, e)))
-            {
-                pressed = Array.FindIndex(hkManager.positionKeys, item => keyEventArgsEquals(item, e));
-                Console.WriteLine((Position)pressed + " pressed.");
+                // If a position hotkey was pressed, clear any selected positions, and select the associated position.
+                else if (hkManager.positionKeys.Any(item => keyEventArgsEquals(item, e)))
+                {
+                    pressed = Array.FindIndex(hkManager.positionKeys, item => keyEventArgsEquals(item, e));
+                    Console.WriteLine((Position)pressed + " pressed.");
 
-                Array.Clear(selected, 0, selected.Length);
-                selected[pressed] = true;
+                    Array.Clear(selected, 0, selected.Length);
+                    selected[pressed] = true;
+                }
+                else if (keyEventArgsEquals(hkManager.clearKey, e))
+                {
+                    removeAllCountdowns();
+                }
+                else
+                {
+                    Console.WriteLine("Hotkey ID not recognized: " + e.KeyData);
+                }
+                e.Handled = true;
             }
-            else if (keyEventArgsEquals(hkManager.clearKey, e))
-            {
-                removeAllCountdowns();
-            }
-            else
-            {
-                Console.WriteLine("Hotkey ID not recognized: " + e.KeyData);
-            }
-            e.Handled = true;
         }
 
         private void menuItemHotkeys_Click(object sender, EventArgs e)
@@ -267,10 +272,10 @@ namespace raka_no_f
 
         private void populateDefaultHotkeyOptions()
         {
-            hkManager.add(Keys.Space);
-            hkManager.clearKey = new KeyEventArgs(Keys.Control | Keys.Space);
-            hotkeyForm.hkDisplayControls["clear"].hkControl.Hotkey = Keys.Space;
-            hotkeyForm.hkDisplayControls["clear"].hkControl.HotkeyModifiers = Keys.Control;
+            hkManager.add(Keys.End);
+            hkManager.clearKey = new KeyEventArgs(Keys.End);
+            hotkeyForm.hkDisplayControls["clear"].hkControl.Hotkey = Keys.End;
+            hotkeyForm.hkDisplayControls["clear"].hkControl.HotkeyModifiers = Keys.None;
 
             hkManager.add(Keys.NumPad7);
             hkManager.positionKeys[(int)Position.top] = new KeyEventArgs(Keys.NumPad7);

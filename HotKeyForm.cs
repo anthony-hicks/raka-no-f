@@ -12,19 +12,21 @@ namespace raka_no_f
 {
     public partial class HotKeyForm : Form
     {
-        private HashSet<exscape.HotkeyControl> changed = new HashSet<exscape.HotkeyControl>();
+        public HashSet<exscape.HotkeyControl> changed = new HashSet<exscape.HotkeyControl>();
 
+        private HotKeyManager hkManager;
         private Dictionary<string, KeyEventArgs[]> hotkeys;
-        public Dictionary<string, exscape.HotkeyControl> hotkeyControls;
+        public Dictionary<string, HotkeyDisplayControl> hkDisplayControls = new Dictionary<string, HotkeyDisplayControl>();
 
-        public HotKeyForm(Dictionary<string, KeyEventArgs[]> hotkeys_)
+        // TODO: Don't need 2/3 params if we pass the whole hkManager...
+        public HotKeyForm(HotKeyManager hkManager_, KeyEventArgs[] spellKeys, KeyEventArgs[] positionKeys)
         {
             InitializeComponent();
+            hkManager = hkManager_;
             this.button1.Click += new EventHandler(this.okButton_Click);
             this.AcceptButton = this.button1;
-            hotkeys = hotkeys_;
+            //hotkeys = hotkeys_; TODO
 
-            hotkeyControls = new Dictionary<string, exscape.HotkeyControl>();
             this.Resize += new System.EventHandler(this.onResize);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.onClose);
 
@@ -35,34 +37,44 @@ namespace raka_no_f
 
             for (Position pos = Position.top; pos < Position.noe; pos++)
             {
+                HotkeyDisplayControl hkDisplayControl = new HotkeyDisplayControl();
+
                 Label label = Form1.createDefaultLabel(pos.ToString());
                 label.Text = pos.ToString();
                 label.Location = new Point(posx - 40, posy + 30);
-                label.ForeColor = System.Drawing.Color.Black;
+                label.ForeColor = Color.Black;
+
+                exscape.HotkeyControl hkControl = createDefaultHotkeyControl(pos.ToString());
+                hkControl.TextChanged += new EventHandler(hotkeyControl_TextChanged);
+                hkControl.Location = new Point(posx, posy += 30);
+
+                hkDisplayControl.label = label;
+                hkDisplayControl.hkControl = hkControl;
+                hkDisplayControls[pos.ToString()] = hkDisplayControl;
+
                 this.Controls.Add(label);
-
-                exscape.HotkeyControl hkcontrol = createDefaultHotkeyControl(pos.ToString());
-                hkcontrol.TextChanged += new EventHandler(hotkeyControl_TextChanged);
-                hkcontrol.Location = new Point(posx, posy += 30);
-
-                this.hotkeyControls[pos.ToString()] = hkcontrol;
-                this.Controls.Add(hkcontrol);
+                this.Controls.Add(hkControl);
             }
 
             for (Spell spell = Spell.flash; spell < Spell.noe; spell++)
             {
+                HotkeyDisplayControl hkDisplayControl = new HotkeyDisplayControl();
+
                 Label label = Form1.createDefaultLabel(spell.ToString());
                 label.Text = spell.ToString();
                 label.Location = new Point(sumx - 55, sumy + 30);
                 label.ForeColor = Color.Black;
+
+                exscape.HotkeyControl hkControl = createDefaultHotkeyControl(spell.ToString());
+                hkControl.TextChanged += new EventHandler(hotkeyControl_TextChanged);
+                hkControl.Location = new Point(sumx, sumy += 30);
+
+                hkDisplayControl.label = label;
+                hkDisplayControl.hkControl = hkControl;
+                hkDisplayControls[spell.ToString()] = hkDisplayControl;
+
                 this.Controls.Add(label);
-
-                exscape.HotkeyControl hkcontrol = createDefaultHotkeyControl(spell.ToString());
-                hkcontrol.TextChanged += new EventHandler(hotkeyControl_TextChanged);
-                hkcontrol.Location = new Point(sumx, sumy += 30);
-
-                this.hotkeyControls[spell.ToString()] = hkcontrol;
-                this.Controls.Add(hkcontrol);
+                this.Controls.Add(hkControl);
             }
 
             this.Hide();
@@ -70,15 +82,15 @@ namespace raka_no_f
 
         private exscape.HotkeyControl createDefaultHotkeyControl(string name_)
         {
-            exscape.HotkeyControl hkcontrol = new exscape.HotkeyControl();
+            exscape.HotkeyControl hkControl = new exscape.HotkeyControl();
 
-            hkcontrol.Hotkey = Keys.None;
-            hkcontrol.HotkeyModifiers = Keys.None;
-            hkcontrol.Name = name_;
-            hkcontrol.Size = new Size(125, 20);
-            hkcontrol.Text = "";
+            hkControl.Hotkey = Keys.None;
+            hkControl.HotkeyModifiers = Keys.None;
+            hkControl.Name = name_;
+            hkControl.Size = new Size(125, 20);
+            hkControl.Text = "";
 
-            return hkcontrol;
+            return hkControl;
         }
 
         private void onResize(object sender, EventArgs e)
@@ -100,26 +112,43 @@ namespace raka_no_f
 
         private void okButton_Click(object sender, EventArgs e)
         {
-            foreach (exscape.HotkeyControl control in this.changed)
+            foreach (HotkeyDisplayControl control in this.hkDisplayControls.Values)
             {
-                Console.WriteLine("control was modified: " + control.Hotkey);
-                // Kinda spaghetti
-                // Need to move stuff around so I'm not exposing random pieces of each class/form
-                //Form1.hook.HookedKeys.Remove(control.Hotkey);
-                //this.hotkeys[]
-                /* 1. Remove the old hotkey from the hook
-                 * 2. set hotkeys[][] = new KeyEventArgs(new hotkey)
-                 * 3. control.Hotkey = ? // Do we even need to do this? Set to text?
-                 */
-            }
+                if (changed.Contains(control.hkControl))
+                {
+                    Spell spell;
+                    Position position;
+                    Keys oldKey;
+                    Keys newKey = control.hkControl.Hotkey;
+                    Keys newModifiers = control.hkControl.HotkeyModifiers;
 
-            this.changed.Clear();
+                    if (Enum.TryParse<Spell>(control.label.Text, out spell))
+                    {
+                        oldKey = hkManager.spellKeys[(int)spell].KeyData;
+                        hkManager.remove(oldKey);
+                        hkManager.spellKeys[(int)spell] = new KeyEventArgs(newKey | newModifiers);
+                    }
+                    else if (Enum.TryParse<Position>(control.label.Text, out position))
+                    {
+                        oldKey = hkManager.positionKeys[(int)position].KeyData;
+                        hkManager.remove(oldKey);
+                        hkManager.positionKeys[(int)position] = new KeyEventArgs(newKey | newModifiers);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Could not parse label.Text into an enum.");
+                    }
+
+                    hkManager.add(newKey);
+                    changed.Remove(control.hkControl);
+                }
+            }
             this.Close();
         }
 
         private void hotkeyControl_TextChanged(object sender, EventArgs e)
         {
-            this.changed.Add((exscape.HotkeyControl)sender);
+            changed.Add((exscape.HotkeyControl) sender);
         }
 
         private void Form2_Load(object sender, EventArgs e)

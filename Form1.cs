@@ -12,39 +12,23 @@ using System.Diagnostics;
 
 //TODO: standardize m_ members and param_
 //TODO: add customization of hotkeys via trayIcon context menu
-//TODO: no window icon when not in tray
-//TODO: have overlay + tray when league is running (in game)
-//      only have tray when league isn't running
 // TODO: separate the in-game form, hotkey settings form, and tray icon into separate files
 //       and use main/program to instantiate.
-//TODO: We want the hotkey form to process the hotkeys when it's open, can we do that
-//      without unregistering hotkeys?
 //TODO: add a clearall hotkey
-//TODO: Synchronize timer ticks?
 
 namespace raka_no_f
 {
     public partial class Form1 : Form
     {
-        [DllImport("user32.dll")]
-        private static extern bool RegisterHotKey(IntPtr hWnd, int id, int modifiers, int key);
-
-        [DllImport("user32.dll")]
-        private static extern bool UnRegisterHotKey(IntPtr hWnd, int id);
-
-        private GlobalKeyboardHook hook = new GlobalKeyboardHook();
-
         private HotKeyForm hotkeyForm;
         private System.Windows.Forms.ContextMenu contextMenu;
         private System.Windows.Forms.MenuItem menuItemExit;
         private System.Windows.Forms.MenuItem menuItemHotkeys;
 
+        private HotKeyManager hkManager;
         private bool[] selected;
         private Enemy[] enemies;
         private List<Countdown> countdowns;
-
-        private bool hook_enabled;
-        private Dictionary<string, KeyEventArgs[]> hotkeys;
 
         public Form1()
         {
@@ -63,13 +47,8 @@ namespace raka_no_f
                 // TODO: get sums from RiotAPI to get more accurate CDs?
             }
 
-            hotkeys = new Dictionary<string, KeyEventArgs[]>
-            {
-                [nameof(Position)] = new KeyEventArgs[(int)Position.noe],
-                [nameof(Spell)] = new KeyEventArgs[(int)Spell.noe]
-            };
-
-            hotkeyForm = new HotKeyForm(hotkeys);
+            hkManager = new HotKeyManager(this.hook_KeyDown);
+            hotkeyForm = new HotKeyForm(hkManager, hkManager.spellKeys, hkManager.positionKeys);
             populateDefaultHotkeyOptions();
 
             Timer ingameChecker = new Timer();
@@ -81,8 +60,6 @@ namespace raka_no_f
             countdownMonitor.Interval = 5000; // Every 5s
             countdownMonitor.Tick += new System.EventHandler(this.monitorCountdowns_Tick);
             countdownMonitor.Start();
-
-            hook.KeyDown += new KeyEventHandler(hook_KeyDown);
         }
 
         private bool keyEventArgsEquals(KeyEventArgs l, KeyEventArgs r)
@@ -95,9 +72,9 @@ namespace raka_no_f
             int pressed;
 
             // If a summoner spell hotkey was pressed
-            if (hotkeys[nameof(Spell)].Any(item => keyEventArgsEquals(item, e)))
+            if (hkManager.spellKeys.Any(item => keyEventArgsEquals(item, e)))
             {
-                pressed = Array.FindIndex(hotkeys[nameof(Spell)], item => keyEventArgsEquals(item, e));
+                pressed = Array.FindIndex(hkManager.spellKeys, item => keyEventArgsEquals(item, e));
                 Console.WriteLine((Spell)pressed + " pressed.");
 
                 // If a position is selected
@@ -110,9 +87,9 @@ namespace raka_no_f
                 }
             }
             // If a position hotkey was pressed, clear any selected positions, and select the associated position.
-            else if (hotkeys[nameof(Position)].Any(item => keyEventArgsEquals(item, e)))
+            else if (hkManager.positionKeys.Any(item => keyEventArgsEquals(item, e)))
             {
-                pressed = Array.FindIndex(hotkeys[nameof(Position)], item => keyEventArgsEquals(item, e));
+                pressed = Array.FindIndex(hkManager.positionKeys, item => keyEventArgsEquals(item, e));
                 Console.WriteLine((Position)pressed + " pressed.");
 
                 Array.Clear(selected, 0, selected.Length);
@@ -120,7 +97,10 @@ namespace raka_no_f
             }
             else
             {
-                Console.WriteLine("Hotkey ID not recognized.");
+                Console.WriteLine("Hotkey ID not recognized: " + e.KeyData);
+                Console.WriteLine("Modifiers: " + e.Modifiers);
+                Console.WriteLine("control = " + e.Control);
+                Console.WriteLine("control.modifiers" + (Control.ModifierKeys & Keys.Control));
             }
             e.Handled = true;
         }
@@ -198,10 +178,7 @@ namespace raka_no_f
         private void post()
         {
             this.Hide();
-
-            hook.HookedKeys.Clear();
-            hook.unhook();
-            hook_enabled = false;
+            hkManager.reset();
 
             for (int i = countdowns.Count - 1; countdowns.Count > 0 && i >= 0; i--)
             {
@@ -241,13 +218,11 @@ namespace raka_no_f
         {
             bool game_running = isLeagueRunning();
 
-            if (game_running && !hook_enabled)
+            if (game_running && !hkManager.hook_enabled)
             {
-                this.enableDefaultHotkeys();
-                hook.hook();
-                hook_enabled = true;
+                hkManager.enableHotkeys();
             }
-            else if (!game_running && hook_enabled)
+            else if (!game_running && hkManager.hook_enabled)
             {
                 post();
             }
@@ -286,56 +261,59 @@ namespace raka_no_f
             }
         }
 
-        private void enableDefaultHotkeys()
+        private void enableHotkeys()
         {
-            hook.HookedKeys.Add(Keys.NumPad7);
-            hook.HookedKeys.Add(Keys.NumPad4);
-            hook.HookedKeys.Add(Keys.NumPad1);
-            hook.HookedKeys.Add(Keys.NumPad0);
-            hook.HookedKeys.Add(Keys.Decimal);
-            hook.HookedKeys.Add(Keys.Add);
-            hook.HookedKeys.Add(Keys.NumPad9);
-            hook.HookedKeys.Add(Keys.U);
-            hook.HookedKeys.Add(Keys.Enter);
+            hkManager.add(Keys.NumPad7);
+            hkManager.add(Keys.NumPad4);
+            hkManager.add(Keys.NumPad1);
+            hkManager.add(Keys.NumPad0);
+            hkManager.add(Keys.Decimal);
+            hkManager.add(Keys.Add);
+            hkManager.add(Keys.NumPad9);
+            hkManager.add(Keys.U);
+            hkManager.add(Keys.Enter);
         }
 
         private void populateDefaultHotkeyOptions()
         {
-            hotkeys[nameof(Position)][(int)Position.top] = new KeyEventArgs(Keys.NumPad7);
-            hotkeyForm.hotkeyControls[Position.top.ToString()].Hotkey = Keys.NumPad7;
-            hotkeyForm.hotkeyControls[Position.top.ToString()].HotkeyModifiers = Keys.None;
+            hkManager.positionKeys[(int)Position.top] = new KeyEventArgs(Keys.NumPad7);
 
-            hotkeys[nameof(Position)][(int)Position.jg] = new KeyEventArgs(Keys.NumPad4);
-            hotkeyForm.hotkeyControls[Position.jg.ToString()].Hotkey = Keys.NumPad4;
-            hotkeyForm.hotkeyControls[Position.jg.ToString()].HotkeyModifiers = Keys.None;
+            hotkeyForm.hkDisplayControls[Position.top.ToString()].hkControl.Hotkey = Keys.NumPad7;
+            hotkeyForm.hkDisplayControls[Position.top.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
-            hotkeys[nameof(Position)][(int)Position.mid] = new KeyEventArgs(Keys.NumPad1);
-            hotkeyForm.hotkeyControls[Position.mid.ToString()].Hotkey = Keys.NumPad1;
-            hotkeyForm.hotkeyControls[Position.mid.ToString()].HotkeyModifiers = Keys.None;
+            hkManager.positionKeys[(int)Position.jg] = new KeyEventArgs(Keys.NumPad4);
+            hotkeyForm.hkDisplayControls[Position.jg.ToString()].hkControl.Hotkey = Keys.NumPad4;
+            hotkeyForm.hkDisplayControls[Position.jg.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
-            hotkeys[nameof(Position)][(int)Position.adc] = new KeyEventArgs(Keys.NumPad0);
-            hotkeyForm.hotkeyControls[Position.adc.ToString()].Hotkey = Keys.NumPad0;
-            hotkeyForm.hotkeyControls[Position.adc.ToString()].HotkeyModifiers = Keys.None;
+            hkManager.positionKeys[(int)Position.mid] = new KeyEventArgs(Keys.NumPad1);
+            hotkeyForm.hkDisplayControls[Position.mid.ToString()].hkControl.Hotkey = Keys.NumPad1;
+            hotkeyForm.hkDisplayControls[Position.mid.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
-            hotkeys[nameof(Position)][(int)Position.sup] = new KeyEventArgs(Keys.Decimal);
-            hotkeyForm.hotkeyControls[Position.sup.ToString()].Hotkey = Keys.Decimal;
-            hotkeyForm.hotkeyControls[Position.sup.ToString()].HotkeyModifiers = Keys.None;
+            hkManager.positionKeys[(int)Position.adc] = new KeyEventArgs(Keys.NumPad0);
+            hotkeyForm.hkDisplayControls[Position.adc.ToString()].hkControl.Hotkey = Keys.NumPad0;
+            hotkeyForm.hkDisplayControls[Position.adc.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
-            hotkeys[nameof(Spell)][(int)Spell.flash] = new KeyEventArgs(Keys.Add);
-            hotkeyForm.hotkeyControls[Spell.flash.ToString()].Hotkey = Keys.Add;
-            hotkeyForm.hotkeyControls[Spell.flash.ToString()].HotkeyModifiers = Keys.None;
+            hkManager.positionKeys[(int)Position.sup] = new KeyEventArgs(Keys.Decimal);
+            hotkeyForm.hkDisplayControls[Position.sup.ToString()].hkControl.Hotkey = Keys.Decimal;
+            hotkeyForm.hkDisplayControls[Position.sup.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
-            hotkeys[nameof(Spell)][(int)Spell.ignite] = new KeyEventArgs(Keys.NumPad9);
-            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].Hotkey = Keys.NumPad9;
-            hotkeyForm.hotkeyControls[Spell.ignite.ToString()].HotkeyModifiers = Keys.None;
+            hkManager.spellKeys[(int)Spell.flash] = new KeyEventArgs(Keys.Add);
+            hotkeyForm.hkDisplayControls[Spell.flash.ToString()].hkControl.Hotkey = Keys.Add;
+            hotkeyForm.hkDisplayControls[Spell.flash.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
-            hotkeys[nameof(Spell)][(int)Spell.exhaust] = new KeyEventArgs(Keys.U | Keys.Control);
-            hotkeyForm.hotkeyControls[Spell.exhaust.ToString()].Hotkey = Keys.U;
-            hotkeyForm.hotkeyControls[Spell.exhaust.ToString()].HotkeyModifiers = Keys.Control;
+            hkManager.spellKeys[(int)Spell.ignite] = new KeyEventArgs(Keys.NumPad9);
+            hotkeyForm.hkDisplayControls[Spell.ignite.ToString()].hkControl.Hotkey = Keys.NumPad9;
+            hotkeyForm.hkDisplayControls[Spell.ignite.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
-            hotkeys[nameof(Spell)][(int)Spell.teleport] = new KeyEventArgs(Keys.Enter);
-            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].Hotkey = Keys.Enter;
-            hotkeyForm.hotkeyControls[Spell.teleport.ToString()].HotkeyModifiers = Keys.None;
+            hkManager.spellKeys[(int)Spell.exhaust] = new KeyEventArgs(Keys.U | Keys.Control);
+            hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.Hotkey = Keys.U;
+            hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.HotkeyModifiers = Keys.Control;
+
+            hkManager.spellKeys[(int)Spell.teleport] = new KeyEventArgs(Keys.Enter);
+            hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.Hotkey = Keys.Enter;
+            hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.HotkeyModifiers = Keys.None;
+
+            hotkeyForm.changed.Clear();
         }
     }
 }

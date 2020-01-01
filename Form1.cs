@@ -14,7 +14,6 @@ using System.Diagnostics;
 //TODO: add customization of hotkeys via trayIcon context menu
 // TODO: separate the in-game form, hotkey settings form, and tray icon into separate files
 //       and use main/program to instantiate.
-//TODO: add a clearall hotkey
 
 namespace raka_no_f
 {
@@ -51,13 +50,15 @@ namespace raka_no_f
             hotkeyForm = new HotKeyForm(hkManager, hkManager.spellKeys, hkManager.positionKeys);
             populateDefaultHotkeyOptions();
 
+            // Checks if League of Legends is running
             Timer ingameChecker = new Timer();
-            ingameChecker.Interval = 5000; // Every 5s
+            ingameChecker.Interval = 3000;
             ingameChecker.Tick += new System.EventHandler(this.checkIfInGame_Tick);
             ingameChecker.Start();
 
+            // Checks if any countdown is complete, and removes if so.
             Timer countdownMonitor = new Timer();
-            countdownMonitor.Interval = 5000; // Every 5s
+            countdownMonitor.Interval = 5000;
             countdownMonitor.Tick += new System.EventHandler(this.monitorCountdowns_Tick);
             countdownMonitor.Start();
         }
@@ -95,12 +96,13 @@ namespace raka_no_f
                 Array.Clear(selected, 0, selected.Length);
                 selected[pressed] = true;
             }
+            else if (keyEventArgsEquals(hkManager.clearKey, e))
+            {
+                removeAllCountdowns();
+            }
             else
             {
                 Console.WriteLine("Hotkey ID not recognized: " + e.KeyData);
-                Console.WriteLine("Modifiers: " + e.Modifiers);
-                Console.WriteLine("control = " + e.Control);
-                Console.WriteLine("control.modifiers" + (Control.ModifierKeys & Keys.Control));
             }
             e.Handled = true;
         }
@@ -178,19 +180,27 @@ namespace raka_no_f
         private void post()
         {
             this.Hide();
-            hkManager.reset();
+            hkManager.disableHotkeys();
+            removeAllCountdowns();
+        }
 
+        private void removeAllCountdowns()
+        {
             for (int i = countdowns.Count - 1; countdowns.Count > 0 && i >= 0; i--)
             {
-                // Remove the label from the flow layout panel
-                this.flowLayoutPanel1.Controls.Remove(countdowns[i].label);
-
-                // Release resources of label
-                countdowns[i].label.Dispose();
-
-                // Remove the countdown
-                countdowns.RemoveAt(i);
+                removeCountdownAt(i);
             }
+        }
+        private void removeCountdownAt(int i)
+        {
+            // Remove the label from the flow layout panel
+            this.flowLayoutPanel1.Controls.Remove(countdowns[i].label);
+
+            // Release resources of label
+            countdowns[i].label.Dispose();
+
+            // Remove the countdown
+            countdowns.RemoveAt(i);
         }
 
         private void monitorCountdowns_Tick(object sender, EventArgs e)
@@ -201,14 +211,7 @@ namespace raka_no_f
                 {
                     if (countdowns[i].done)
                     {
-                        // Remove the label from the flow layout panel
-                        this.flowLayoutPanel1.Controls.Remove(countdowns[i].label);
-
-                        // Release resources of label
-                        countdowns[i].label.Dispose();
-
-                        // Remove the countdown
-                        countdowns.RemoveAt(i);
+                        removeCountdownAt(i);
                     }
                 }
             }
@@ -230,11 +233,8 @@ namespace raka_no_f
 
         private void processCountdown(Position position_, Spell spell_)
         {
-            string labelName = position_.ToString() + " " + spell_.ToString();
-            string labelText = labelName + ": ";
-            Console.WriteLine("Creating/Updating " + labelName);
-
             bool exists = false;
+
             foreach (Countdown c in countdowns)
             {
                 if (c.position == position_ && c.spell == spell_)
@@ -248,7 +248,11 @@ namespace raka_no_f
 
             if (!exists)
             {
+                string labelName = position_.ToString() + " " + spell_.ToString();
+                string labelText = labelName + ": ";
+
                 Console.WriteLine("Creating new countdown for " + labelName);
+
                 System.Windows.Forms.Label label = createDefaultLabel(labelName);
                 this.flowLayoutPanel1.Controls.Add(label);
                 countdowns.Add(new Countdown(
@@ -261,54 +265,55 @@ namespace raka_no_f
             }
         }
 
-        private void enableHotkeys()
-        {
-            hkManager.add(Keys.NumPad7);
-            hkManager.add(Keys.NumPad4);
-            hkManager.add(Keys.NumPad1);
-            hkManager.add(Keys.NumPad0);
-            hkManager.add(Keys.Decimal);
-            hkManager.add(Keys.Add);
-            hkManager.add(Keys.NumPad9);
-            hkManager.add(Keys.U);
-            hkManager.add(Keys.Enter);
-        }
-
         private void populateDefaultHotkeyOptions()
         {
+            hkManager.add(Keys.Space);
+            hkManager.clearKey = new KeyEventArgs(Keys.Control | Keys.Space);
+            hotkeyForm.hkDisplayControls["clear"].hkControl.Hotkey = Keys.Space;
+            hotkeyForm.hkDisplayControls["clear"].hkControl.HotkeyModifiers = Keys.Control;
+
+            hkManager.add(Keys.NumPad7);
             hkManager.positionKeys[(int)Position.top] = new KeyEventArgs(Keys.NumPad7);
 
             hotkeyForm.hkDisplayControls[Position.top.ToString()].hkControl.Hotkey = Keys.NumPad7;
             hotkeyForm.hkDisplayControls[Position.top.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
+            hkManager.add(Keys.NumPad4);
             hkManager.positionKeys[(int)Position.jg] = new KeyEventArgs(Keys.NumPad4);
             hotkeyForm.hkDisplayControls[Position.jg.ToString()].hkControl.Hotkey = Keys.NumPad4;
             hotkeyForm.hkDisplayControls[Position.jg.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
+            hkManager.add(Keys.NumPad1);
             hkManager.positionKeys[(int)Position.mid] = new KeyEventArgs(Keys.NumPad1);
             hotkeyForm.hkDisplayControls[Position.mid.ToString()].hkControl.Hotkey = Keys.NumPad1;
             hotkeyForm.hkDisplayControls[Position.mid.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
+            hkManager.add(Keys.NumPad0);
             hkManager.positionKeys[(int)Position.adc] = new KeyEventArgs(Keys.NumPad0);
             hotkeyForm.hkDisplayControls[Position.adc.ToString()].hkControl.Hotkey = Keys.NumPad0;
             hotkeyForm.hkDisplayControls[Position.adc.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
+            hkManager.add(Keys.Decimal);
             hkManager.positionKeys[(int)Position.sup] = new KeyEventArgs(Keys.Decimal);
             hotkeyForm.hkDisplayControls[Position.sup.ToString()].hkControl.Hotkey = Keys.Decimal;
             hotkeyForm.hkDisplayControls[Position.sup.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
+            hkManager.add(Keys.Add);
             hkManager.spellKeys[(int)Spell.flash] = new KeyEventArgs(Keys.Add);
             hotkeyForm.hkDisplayControls[Spell.flash.ToString()].hkControl.Hotkey = Keys.Add;
             hotkeyForm.hkDisplayControls[Spell.flash.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
+            hkManager.add(Keys.NumPad9);
             hkManager.spellKeys[(int)Spell.ignite] = new KeyEventArgs(Keys.NumPad9);
             hotkeyForm.hkDisplayControls[Spell.ignite.ToString()].hkControl.Hotkey = Keys.NumPad9;
             hotkeyForm.hkDisplayControls[Spell.ignite.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
+            hkManager.add(Keys.U);
             hkManager.spellKeys[(int)Spell.exhaust] = new KeyEventArgs(Keys.U | Keys.Control);
             hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.Hotkey = Keys.U;
             hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.HotkeyModifiers = Keys.Control;
 
+            hkManager.add(Keys.Enter);
             hkManager.spellKeys[(int)Spell.teleport] = new KeyEventArgs(Keys.Enter);
             hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.Hotkey = Keys.Enter;
             hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.HotkeyModifiers = Keys.None;

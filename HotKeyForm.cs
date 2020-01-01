@@ -77,6 +77,23 @@ namespace raka_no_f
                 this.Controls.Add(hkControl);
             }
 
+            HotkeyDisplayControl clearControl = new HotkeyDisplayControl();
+            Label clearLabel = Form1.createDefaultLabel("clear");
+            clearLabel.Text = "clear";
+            clearLabel.Location = new Point(sumx - 55, sumy + 30);
+            clearLabel.ForeColor = Color.Black;
+
+            exscape.HotkeyControl clearHkControl = createDefaultHotkeyControl("clear");
+            clearHkControl.TextChanged += new EventHandler(hotkeyControl_TextChanged);
+            clearHkControl.Location = new Point(sumx, sumy += 30);
+
+            clearControl.label = clearLabel;
+            clearControl.hkControl = clearHkControl;
+            hkDisplayControls["clear"] = clearControl;
+
+            this.Controls.Add(clearLabel);
+            this.Controls.Add(clearHkControl);
+
             this.Hide();
         }
 

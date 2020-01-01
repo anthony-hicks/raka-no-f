@@ -33,7 +33,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(285, 192);
+            this.button1.Location = new System.Drawing.Point(285, 211);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(104, 25);
             this.button1.TabIndex = 0;
@@ -44,7 +44,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(401, 229);
+            this.ClientSize = new System.Drawing.Size(401, 248);
             this.Controls.Add(this.button1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "HotKeyForm";

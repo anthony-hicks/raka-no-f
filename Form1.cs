@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace raka_no_f
 {
@@ -25,6 +27,7 @@ namespace raka_no_f
         private Enemy[] enemies;
         private List<Countdown> countdowns;
         private bool leagueActivated;
+        private string _hotkeyFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"rakaNoF\hotkeys.json");
 
         public Form1()
         {
@@ -123,6 +126,83 @@ namespace raka_no_f
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            loadHotkeysFromFile(_hotkeyFilePath);
+        }
+
+        private void loadHotkeysFromFile(string path)
+        {
+            if (File.Exists(path))
+            {
+                Dictionary<string, KeyEventArgs> keys;
+
+                using (StreamReader file = new StreamReader(path))
+                {
+                    keys = JsonConvert.DeserializeObject<Dictionary<string, KeyEventArgs>>(file.ReadToEnd());
+                    file.Close();
+                }
+
+                hkManager.removeAll();
+
+                foreach (KeyValuePair<string, KeyEventArgs> entry in keys)
+                {
+                    Spell spell;
+                    Position position;
+
+                    if (entry.Key == "clear")
+                    {
+                        hkManager.clearKey = entry.Value;
+                    }
+                    else if (Enum.TryParse<Spell>(entry.Key, out spell))
+                    {
+                        hkManager.spellKeys[(int)spell] = entry.Value;
+                    }
+                    else if (Enum.TryParse<Position>(entry.Key, out position))
+                    {
+                        hkManager.positionKeys[(int)position] = entry.Value;
+                    }
+
+                    hkManager.add(entry.Value.KeyCode);
+                    hotkeyForm.hkDisplayControls[entry.Key].hkControl.Hotkey = entry.Value.KeyCode;
+                    hotkeyForm.hkDisplayControls[entry.Key].hkControl.HotkeyModifiers = entry.Value.Modifiers;
+                }
+
+                Console.WriteLine("Hotkeys loaded from file: " + path);
+            }
+            else
+            {
+                Console.WriteLine("Hotkeys save file DNE: " + path);
+            }
+        }
+
+        private void saveHotkeysToFile(string path)
+        {
+            Dictionary<string, KeyEventArgs> keys = new Dictionary<string, KeyEventArgs>();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            keys["clear"] = hkManager.clearKey;
+
+            for (Spell spell = Spell.flash; spell < Spell.noe; spell++)
+            {
+                keys[spell.ToString()] = hkManager.spellKeys[(int)spell];
+            }
+
+            for (Position position = Position.top; position < Position.noe; position++)
+            {
+                keys[position.ToString()] = hkManager.positionKeys[(int)position];
+            }
+
+            using (StreamWriter file = new StreamWriter(path))
+            {
+                file.WriteLine(JsonConvert.SerializeObject(keys));
+                file.Close();
+            }
+
+            Console.WriteLine("Hotkeys saved to file: " + path);
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            saveHotkeysToFile(_hotkeyFilePath);
         }
 
         private void initializeTrayIcon()
@@ -152,6 +232,7 @@ namespace raka_no_f
         private void assignEventHandlers()
         {
             // Main form
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(Form1_FormClosing);
 
             // Tray icon
             menuItemHotkeys.Click += new System.EventHandler(menuItemHotkeys_Click);
@@ -343,10 +424,15 @@ namespace raka_no_f
             hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.Hotkey = Keys.U;
             hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.HotkeyModifiers = Keys.Control;
 
-            hkManager.add(Keys.Enter);
-            hkManager.spellKeys[(int)Spell.teleport] = new KeyEventArgs(Keys.Enter);
-            hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.Hotkey = Keys.Enter;
+            hkManager.add(Keys.Subtract);
+            hkManager.spellKeys[(int)Spell.teleport] = new KeyEventArgs(Keys.Subtract);
+            hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.Hotkey = Keys.Subtract;
             hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.HotkeyModifiers = Keys.None;
+
+            hkManager.add(Keys.Multiply);
+            hkManager.spellKeys[(int)Spell.heal] = new KeyEventArgs(Keys.Multiply);
+            hotkeyForm.hkDisplayControls[Spell.heal.ToString()].hkControl.Hotkey = Keys.Multiply;
+            hotkeyForm.hkDisplayControls[Spell.heal.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
             hotkeyForm.changed.Clear();
         }

@@ -17,8 +17,9 @@ namespace raka_no_f
     {
         flash = 0,
         teleport = 1,
-        ignite = 2,
-        exhaust = 3,
+        heal = 2,
+        ignite = 3,
+        exhaust = 4,
         noe
     }
 

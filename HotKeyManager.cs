@@ -41,6 +41,7 @@ namespace raka_no_f
             _hook.HookedKeys.AddRange(_hotkeys);
             _hook.hook();
             hook_enabled = true;
+            Console.WriteLine("Hotkeys enabled.");
         }
 
         public void disableHotkeys()
@@ -48,6 +49,14 @@ namespace raka_no_f
             _hook.HookedKeys.Clear();
             _hook.unhook();
             hook_enabled = false;
+            Console.WriteLine("Hotkeys disabled.");
+        }
+
+        public void removeAll()
+        {
+            _hotkeys.Clear();
+            _hook.HookedKeys.Clear();
+            Console.WriteLine("All hotkeys removed.");
         }
     }
 }

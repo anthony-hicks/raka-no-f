@@ -31,8 +31,8 @@ namespace raka_no_f
 
         public void remove(Keys key)
         {
-            _hotkeys.RemoveAll(item => item == key);
-            _hook.HookedKeys.RemoveAll(item => item == key);
+            _hotkeys.Remove(key);
+            _hook.HookedKeys.Remove(key);
             Console.WriteLine("Hotkey removed: " + key);
         }
 

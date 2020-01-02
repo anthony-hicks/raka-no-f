@@ -36,8 +36,6 @@ namespace raka_no_f
             Cooldowns defaults = new Cooldowns();
             cd = new Dictionary<Spell, int>();
 
-            // TODO: Right now we don't know what summoners each enemy has, so we assume
-            //       that they have them all.
             for (Spell spell = Spell.flash; spell < Spell.noe; spell++)
             {
                 cd[spell] = defaults[spell];

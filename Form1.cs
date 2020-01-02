@@ -4,10 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
 
-//TODO: standardize m_ members and param_
-// TODO: separate the in-game form, hotkey settings form, and tray icon into separate files
-//       and use main/program to instantiate.
-
 namespace raka_no_f
 {
     public partial class Form1 : Form
@@ -36,7 +32,6 @@ namespace raka_no_f
             for (Position pos = Position.top; pos < Position.noe; ++pos)
             {
                 enemies[(int)pos] = new Enemy(pos, false); // We assume no mods to summ spell CDs for now.
-                // TODO: get sums from RiotAPI to get more accurate CDs?
             }
 
             hkManager = new HotKeyManager(this.hook_KeyDown);

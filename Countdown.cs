@@ -71,7 +71,6 @@ namespace raka_no_f
             }
             else
             {
-                //TODO: visual alarm? Flash text possible?
                 label.Text = m_message + "UP";
                 m_alert_remaining--;
             }

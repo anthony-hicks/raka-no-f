@@ -1,3 +1,6 @@
 Debug
 .vs
 *.sln
+/bin/Release
+*.props
+/raka-no-f.pdb

@@ -27,7 +27,7 @@ namespace raka_no_f
         private Enemy[] enemies;
         private List<Countdown> countdowns;
         private bool leagueActivated;
-        private string _hotkeyFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"rakaNoF\hotkeys.json");
+        private string _hotkeyFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"raka-no-f\hotkeys.json");
 
         public Form1()
         {

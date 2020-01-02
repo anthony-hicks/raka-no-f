@@ -2,12 +2,19 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace raka_no_f
 {
     public partial class Form1 : Form
     {
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowThreadProcessId(IntPtr handle, out int processId);
+
         private HotKeyForm hotkeyForm;
         private System.Windows.Forms.ContextMenu contextMenu;
         private System.Windows.Forms.MenuItem menuItemExit;
@@ -17,6 +24,7 @@ namespace raka_no_f
         private bool[] selected;
         private Enemy[] enemies;
         private List<Countdown> countdowns;
+        private bool leagueActivated;
 
         public Form1()
         {
@@ -42,7 +50,7 @@ namespace raka_no_f
 
             // Checks if League of Legends is running
             Timer ingameChecker = new Timer();
-            ingameChecker.Interval = 2000;
+            ingameChecker.Interval = 500;
             ingameChecker.Tick += new System.EventHandler(this.checkIfInGame_Tick);
             ingameChecker.Start();
 
@@ -61,7 +69,7 @@ namespace raka_no_f
         private void hook_KeyDown(object sender, KeyEventArgs e)
         {
             // We don't want to process the hotkeys if we're changing hotkeys
-            if (!hotkeyForm.Visible)
+            if (leagueActivated)
             {
                 int pressed;
 
@@ -171,6 +179,29 @@ namespace raka_no_f
             return (Process.GetProcessesByName("League of Legends").Length != 0);
         }
 
+        private bool isLeagueActivated()
+        {
+            if (isLeagueRunning())
+            {
+                int activeProcId;
+                var leagueProcId = Process.GetProcessesByName("League of Legends")[0].Id;
+                var activatedHandle = GetForegroundWindow();
+
+                if (activatedHandle == IntPtr.Zero)
+                {
+                    return false;
+                }
+
+                GetWindowThreadProcessId(activatedHandle, out activeProcId);
+
+                return activeProcId == leagueProcId;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         private void post()
         {
             this.Hide();
@@ -214,10 +245,15 @@ namespace raka_no_f
         private void checkIfInGame_Tick(object sender, EventArgs e)
         {
             bool game_running = isLeagueRunning();
+            leagueActivated = isLeagueActivated();
 
-            if (game_running && !hkManager.hook_enabled)
+            if (leagueActivated && !hkManager.hook_enabled)
             {
                 hkManager.enableHotkeys();
+            }
+            else if (!leagueActivated && hkManager.hook_enabled)
+            {
+                hkManager.disableHotkeys();
             }
             else if (!game_running && hkManager.hook_enabled)
             {

@@ -17,8 +17,9 @@ namespace raka_no_f
     {
         flash = 0,
         teleport = 1,
-        ignite = 2,
-        exhaust = 3,
+        heal = 2,
+        ignite = 3,
+        exhaust = 4,
         noe
     }
 
@@ -36,8 +37,6 @@ namespace raka_no_f
             Cooldowns defaults = new Cooldowns();
             cd = new Dictionary<Spell, int>();
 
-            // TODO: Right now we don't know what summoners each enemy has, so we assume
-            //       that they have them all.
             for (Spell spell = Spell.flash; spell < Spell.noe; spell++)
             {
                 cd[spell] = defaults[spell];

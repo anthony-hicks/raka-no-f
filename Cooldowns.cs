@@ -9,7 +9,8 @@ namespace raka_no_f
         public static readonly int _flash = 300;
         public static readonly int _teleport = 360;
         public static readonly int _ignite = 180;
-        public static readonly int _exhaust = 180;
+        public static readonly int _exhaust = 210;
+        public static readonly int _heal = 240;
 
         public Cooldowns()
         {
@@ -18,7 +19,8 @@ namespace raka_no_f
                 { Spell.flash, _flash },
                 { Spell.teleport, _teleport },
                 { Spell.ignite, _ignite },
-                { Spell.exhaust, _exhaust }
+                { Spell.exhaust, _exhaust },
+                { Spell.heal, _heal }
             };
         }
 

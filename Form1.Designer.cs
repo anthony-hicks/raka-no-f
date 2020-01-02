@@ -63,7 +63,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "Form1";
             this.ShowInTaskbar = false;
-            this.Text = "k";
+            this.Text = "raka-no-f";
             this.TopMost = true;
             this.TransparencyKey = System.Drawing.Color.DarkGray;
             this.Load += new System.EventHandler(this.Form1_Load);

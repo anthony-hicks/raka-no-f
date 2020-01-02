@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
-
-//TODO: standardize m_ members and param_
-// TODO: separate the in-game form, hotkey settings form, and tray icon into separate files
-//       and use main/program to instantiate.
+using Newtonsoft.Json;
 
 namespace raka_no_f
 {
     public partial class Form1 : Form
     {
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowThreadProcessId(IntPtr handle, out int processId);
+
         private HotKeyForm hotkeyForm;
         private System.Windows.Forms.ContextMenu contextMenu;
         private System.Windows.Forms.MenuItem menuItemExit;
@@ -21,6 +26,8 @@ namespace raka_no_f
         private bool[] selected;
         private Enemy[] enemies;
         private List<Countdown> countdowns;
+        private bool leagueActivated;
+        private string _hotkeyFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"rakaNoF\hotkeys.json");
 
         public Form1()
         {
@@ -36,7 +43,6 @@ namespace raka_no_f
             for (Position pos = Position.top; pos < Position.noe; ++pos)
             {
                 enemies[(int)pos] = new Enemy(pos, false); // We assume no mods to summ spell CDs for now.
-                // TODO: get sums from RiotAPI to get more accurate CDs?
             }
 
             hkManager = new HotKeyManager(this.hook_KeyDown);
@@ -47,7 +53,7 @@ namespace raka_no_f
 
             // Checks if League of Legends is running
             Timer ingameChecker = new Timer();
-            ingameChecker.Interval = 2000;
+            ingameChecker.Interval = 500;
             ingameChecker.Tick += new System.EventHandler(this.checkIfInGame_Tick);
             ingameChecker.Start();
 
@@ -66,7 +72,7 @@ namespace raka_no_f
         private void hook_KeyDown(object sender, KeyEventArgs e)
         {
             // We don't want to process the hotkeys if we're changing hotkeys
-            if (!hotkeyForm.Visible)
+            if (leagueActivated)
             {
                 int pressed;
 
@@ -120,6 +126,83 @@ namespace raka_no_f
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            loadHotkeysFromFile(_hotkeyFilePath);
+        }
+
+        private void loadHotkeysFromFile(string path)
+        {
+            if (File.Exists(path))
+            {
+                Dictionary<string, KeyEventArgs> keys;
+
+                using (StreamReader file = new StreamReader(path))
+                {
+                    keys = JsonConvert.DeserializeObject<Dictionary<string, KeyEventArgs>>(file.ReadToEnd());
+                    file.Close();
+                }
+
+                hkManager.removeAll();
+
+                foreach (KeyValuePair<string, KeyEventArgs> entry in keys)
+                {
+                    Spell spell;
+                    Position position;
+
+                    if (entry.Key == "clear")
+                    {
+                        hkManager.clearKey = entry.Value;
+                    }
+                    else if (Enum.TryParse<Spell>(entry.Key, out spell))
+                    {
+                        hkManager.spellKeys[(int)spell] = entry.Value;
+                    }
+                    else if (Enum.TryParse<Position>(entry.Key, out position))
+                    {
+                        hkManager.positionKeys[(int)position] = entry.Value;
+                    }
+
+                    hkManager.add(entry.Value.KeyCode);
+                    hotkeyForm.hkDisplayControls[entry.Key].hkControl.Hotkey = entry.Value.KeyCode;
+                    hotkeyForm.hkDisplayControls[entry.Key].hkControl.HotkeyModifiers = entry.Value.Modifiers;
+                }
+
+                Console.WriteLine("Hotkeys loaded from file: " + path);
+            }
+            else
+            {
+                Console.WriteLine("Hotkeys save file DNE: " + path);
+            }
+        }
+
+        private void saveHotkeysToFile(string path)
+        {
+            Dictionary<string, KeyEventArgs> keys = new Dictionary<string, KeyEventArgs>();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            keys["clear"] = hkManager.clearKey;
+
+            for (Spell spell = Spell.flash; spell < Spell.noe; spell++)
+            {
+                keys[spell.ToString()] = hkManager.spellKeys[(int)spell];
+            }
+
+            for (Position position = Position.top; position < Position.noe; position++)
+            {
+                keys[position.ToString()] = hkManager.positionKeys[(int)position];
+            }
+
+            using (StreamWriter file = new StreamWriter(path))
+            {
+                file.WriteLine(JsonConvert.SerializeObject(keys));
+                file.Close();
+            }
+
+            Console.WriteLine("Hotkeys saved to file: " + path);
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            saveHotkeysToFile(_hotkeyFilePath);
         }
 
         private void initializeTrayIcon()
@@ -149,6 +232,7 @@ namespace raka_no_f
         private void assignEventHandlers()
         {
             // Main form
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(Form1_FormClosing);
 
             // Tray icon
             menuItemHotkeys.Click += new System.EventHandler(menuItemHotkeys_Click);
@@ -174,6 +258,29 @@ namespace raka_no_f
         private bool isLeagueRunning()
         {
             return (Process.GetProcessesByName("League of Legends").Length != 0);
+        }
+
+        private bool isLeagueActivated()
+        {
+            if (isLeagueRunning())
+            {
+                int activeProcId;
+                var leagueProcId = Process.GetProcessesByName("League of Legends")[0].Id;
+                var activatedHandle = GetForegroundWindow();
+
+                if (activatedHandle == IntPtr.Zero)
+                {
+                    return false;
+                }
+
+                GetWindowThreadProcessId(activatedHandle, out activeProcId);
+
+                return activeProcId == leagueProcId;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private void post()
@@ -219,10 +326,15 @@ namespace raka_no_f
         private void checkIfInGame_Tick(object sender, EventArgs e)
         {
             bool game_running = isLeagueRunning();
+            leagueActivated = isLeagueActivated();
 
-            if (game_running && !hkManager.hook_enabled)
+            if (leagueActivated && !hkManager.hook_enabled)
             {
                 hkManager.enableHotkeys();
+            }
+            else if (!leagueActivated && hkManager.hook_enabled)
+            {
+                hkManager.disableHotkeys();
             }
             else if (!game_running && hkManager.hook_enabled)
             {
@@ -312,10 +424,15 @@ namespace raka_no_f
             hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.Hotkey = Keys.U;
             hotkeyForm.hkDisplayControls[Spell.exhaust.ToString()].hkControl.HotkeyModifiers = Keys.Control;
 
-            hkManager.add(Keys.Enter);
-            hkManager.spellKeys[(int)Spell.teleport] = new KeyEventArgs(Keys.Enter);
-            hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.Hotkey = Keys.Enter;
+            hkManager.add(Keys.Subtract);
+            hkManager.spellKeys[(int)Spell.teleport] = new KeyEventArgs(Keys.Subtract);
+            hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.Hotkey = Keys.Subtract;
             hotkeyForm.hkDisplayControls[Spell.teleport.ToString()].hkControl.HotkeyModifiers = Keys.None;
+
+            hkManager.add(Keys.Multiply);
+            hkManager.spellKeys[(int)Spell.heal] = new KeyEventArgs(Keys.Multiply);
+            hotkeyForm.hkDisplayControls[Spell.heal.ToString()].hkControl.Hotkey = Keys.Multiply;
+            hotkeyForm.hkDisplayControls[Spell.heal.ToString()].hkControl.HotkeyModifiers = Keys.None;
 
             hotkeyForm.changed.Clear();
         }

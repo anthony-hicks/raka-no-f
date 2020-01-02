@@ -31,8 +31,8 @@ namespace raka_no_f
 
         public void remove(Keys key)
         {
-            _hotkeys.RemoveAll(item => item == key);
-            _hook.HookedKeys.RemoveAll(item => item == key);
+            _hotkeys.Remove(key);
+            _hook.HookedKeys.Remove(key);
             Console.WriteLine("Hotkey removed: " + key);
         }
 
@@ -41,6 +41,7 @@ namespace raka_no_f
             _hook.HookedKeys.AddRange(_hotkeys);
             _hook.hook();
             hook_enabled = true;
+            Console.WriteLine("Hotkeys enabled.");
         }
 
         public void disableHotkeys()
@@ -48,6 +49,14 @@ namespace raka_no_f
             _hook.HookedKeys.Clear();
             _hook.unhook();
             hook_enabled = false;
+            Console.WriteLine("Hotkeys disabled.");
+        }
+
+        public void removeAll()
+        {
+            _hotkeys.Clear();
+            _hook.HookedKeys.Clear();
+            Console.WriteLine("All hotkeys removed.");
         }
     }
 }
